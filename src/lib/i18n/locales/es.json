@@ -1,0 +1,48 @@
+{
+  "common": {
+    "actions": {
+      "add": "Agregar",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "signOut": "Cerrar Sesión"
+    },
+    "navigation": {
+      "home": "Inicio",
+      "assets": "Activos",
+      "beneficiaries": "Beneficiarios",
+      "documents": "Documentos",
+      "profile": "Perfil",
+      "subscription": "Suscripción"
+    }
+  },
+  "home": {
+    "hero": {
+      "title": "Tu Gestor de Patrimonio Digital",
+      "description": "Fortivo es tu solución todo en uno para:",
+      "features": [
+        "Seguimiento de activos físicos, digitales y financieros",
+        "Gestión de beneficiarios y planes de herencia",
+        "Almacenamiento seguro de documentos",
+        "Obtención de información basada en IA para la planificación patrimonial"
+      ],
+      "cta": "Comenzar"
+    }
+  },
+  "assets": {
+    "title": "Activos",
+    "empty": {
+      "title": "Sin activos",
+      "description": "Comienza agregando tu primer activo."
+    },
+    "table": {
+      "name": "Nombre",
+      "type": "Tipo",
+      "value": "Valor",
+      "location": "Ubicación",
+      "beneficiary": "Beneficiario",
+      "actions": "Acciones"
+    }
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "common": {
+    "actions": {
+      "add": "Add",
+      "edit": "Edit",
+      "delete": "Delete",
+      "save": "Save",
+      "cancel": "Cancel",
+      "signOut": "Sign Out"
+    },
+    "navigation": {
+      "home": "Home",
+      "assets": "Assets",
+      "beneficiaries": "Beneficiaries",
+      "documents": "Documents",
+      "profile": "Profile",
+      "subscription": "Subscription"
+    }
+  },
+  "home": {
+    "features": {
+      "title": "Key Features",
+      "assets": "Manage your assets and track their value",
+      "beneficiaries": "Add and manage your beneficiaries",
+      "documents": "Store and organize important documents", 
+      "subscription": "View and manage your subscription"
+    },
+    "stats": {
+      "totalAssets": "Total Assets",
+      "activeUsers": "Active Users",
+      "documentSecured": "Documents Secured", 
+      "satisfaction": "Customer Satisfaction",
+      "dashboard": {
+        "title": "Your Assets Dashboard",
+        "totalValue": "Total Value",
+        "assetCount": "Asset Count",
+        "recentActivity": "Recent Activity",
+        "noAssets": "No assets yet. Add your first asset to get started!"
+      }
+    },
+    "hero": {
+      "title": "Your Digital Estate Manager",
+      "description": "Fortivo is your all-in-one solution for:",
+      "cta": "Get Started",
+      "features": [
+        "Tracking physical, digital, and financial assets",
+        "Managing beneficiaries and inheritance plans",
+        "Storing important documents securely",
+        "Getting AI-powered insights for estate planning"
+      ],
+      "cta": "Get Started"
+    }
+  },
+  "assets": {
+    "title": "Assets",
+    "empty": {
+      "title": "No assets",
+      "description": "Get started by adding your first asset."
+    },
+    "filters": {
+      "search": "Search assets...",
+      "allTypes": "All Types",
+      "allBeneficiaries": "All Beneficiaries",
+      "noBeneficiary": "No Beneficiary"
+    },
+    "types": {
+      "financial": "Financial",
+      "physical": "Physical",
+      "digital": "Digital",
+      "other": "Other"
+    },
+    "table": {
+      "name": "Name",
+      "type": "Type",
+      "value": "Value",
+      "location": "Location",
+      "beneficiary": "Beneficiary",
+      "actions": "Actions",
+      "confirmDelete": "Are you sure you want to delete this asset?"
+    },
+    "form": {
+      "add": "Add Asset",
+      "edit": "Edit Asset"
+    },
+    "stats": {
+      "totalAssets": "Total Assets",
+      "activeUsers": "Active Users",
+      "documentSecured": "Documents Secured",
+      "satisfaction": "Customer Satisfaction"
+    },
+    "features": {
+      "title": "Key Features",
+      "assets": "Manage your assets and track their value",
+      "beneficiaries": "Add and manage your beneficiaries",
+      "documents": "Store and organize important documents",
+      "subscription": "View and manage your subscription"
+    }
+  }
+}
