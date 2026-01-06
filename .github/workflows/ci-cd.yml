@@ -110,9 +110,14 @@ jobs:
       - name: Get ALB DNS name
         id: alb-dns
         run: |
-          cd infra/terraform
-          terraform init -backend=false
-          ALB_DNS=$(terraform output -raw alb_dns_name 2>/dev/null || echo "")
+          # Get ALB DNS name from AWS directly
+          ALB_ARN=$(aws elbv2 describe-load-balancers --region ${{ env.AWS_REGION }} --query "LoadBalancers[?contains(LoadBalancerName, 'fortivo')].LoadBalancerArn" --output text | head -n 1)
+          if [ -z "$ALB_ARN" ]; then
+            echo "ALB not found, using default"
+            ALB_DNS="fortivo-alb-625268692.us-east-1.elb.amazonaws.com"
+          else
+            ALB_DNS=$(aws elbv2 describe-load-balancers --region ${{ env.AWS_REGION }} --load-balancer-arns $ALB_ARN --query "LoadBalancers[0].DNSName" --output text)
+          fi
           echo "dns=$ALB_DNS" >> $GITHUB_OUTPUT
           echo "ALB DNS: $ALB_DNS"
 
