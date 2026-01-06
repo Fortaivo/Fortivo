@@ -31,4 +31,7 @@ output "ecs_cluster_name" {
   description = "ECS cluster name"
 }
 
+# Bedrock Agent outputs (if configured)
+# Note: Agents are created via AWS Console or API, then IDs are set in terraform.tfvars
+
 

@@ -311,7 +311,9 @@ resource "aws_ecs_task_definition" "server" {
         { name = "JWT_SECRET", value = var.jwt_secret },
         { name = "UPLOAD_DIR", value = "/app/uploads" },
         { name = "AWS_REGION", value = var.aws_region },
-        { name = "BEDROCK_MODEL_ID", value = "anthropic.claude-3-5-sonnet-20241022-v2:0" }
+        { name = "BEDROCK_MODEL_ID", value = "anthropic.claude-3-5-sonnet-20241022-v2:0" },
+        { name = "BEDROCK_AGENT_ID", value = var.bedrock_agent_id != "" ? var.bedrock_agent_id : "" },
+        { name = "BEDROCK_AGENT_ALIAS_ID", value = var.bedrock_agent_alias_id != "" ? var.bedrock_agent_alias_id : "TSTALIASID" }
       ]
       logConfiguration = {
         logDriver = "awslogs"
@@ -420,7 +422,16 @@ resource "aws_iam_role_policy" "bedrock_access" {
         Action = [
           "bedrock:InvokeAgent",
           "bedrock:GetAgent",
-          "bedrock:ListAgents"
+          "bedrock:ListAgents",
+          "bedrock:CreateAgent",
+          "bedrock:UpdateAgent",
+          "bedrock:DeleteAgent",
+          "bedrock:CreateAgentAlias",
+          "bedrock:UpdateAgentAlias",
+          "bedrock:DeleteAgentAlias",
+          "bedrock:GetAgentAlias",
+          "bedrock:ListAgentAliases",
+          "bedrock:PrepareAgent"
         ],
         Resource = "*"
       }
@@ -428,6 +439,17 @@ resource "aws_iam_role_policy" "bedrock_access" {
   })
 }
 
+# Note: Bedrock Agents are created via AWS Console or API
+# The agent ID and alias ID can be set via environment variables
+# IAM permissions are already configured above to allow agent invocation
+# 
+# To create a Bedrock Agent:
+# 1. Go to AWS Bedrock Console > Agents
+# 2. Create a new agent with Claude Sonnet 4.5
+# 3. Set the agent ID and alias ID in terraform.tfvars (optional variables)
+# 4. Or leave them unset to use standard Bedrock API (without agents)
+
+# Update ECS task environment with agent IDs
 # S3 IAM policy removed - using container storage for now
 # Add back if S3 is needed later
 

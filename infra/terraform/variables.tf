@@ -82,4 +82,16 @@ variable "frontend_desired_count" {
   default     = 1
 }
 
+variable "bedrock_agent_id" {
+  type        = string
+  description = "Bedrock Agent ID (optional - leave empty to use standard Bedrock API)"
+  default     = ""
+}
+
+variable "bedrock_agent_alias_id" {
+  type        = string
+  description = "Bedrock Agent Alias ID (optional - leave empty to use standard Bedrock API)"
+  default     = ""
+}
+
 

@@ -23,3 +23,8 @@ frontend_memory = 512
 server_desired_count   = 1
 frontend_desired_count = 1
 
+# Bedrock Agent (optional - leave empty to use standard Bedrock API)
+# To create an agent, use the script: scripts/create-bedrock-agent.sh
+# bedrock_agent_id = ""
+# bedrock_agent_alias_id = ""
+
