@@ -101,7 +101,7 @@ resource "aws_route_table_association" "private_b" {
 
 # NAT Gateway for private subnets
 resource "aws_eip" "nat" {
-  domain = "vpc"
+  domain     = "vpc"
   depends_on = [aws_internet_gateway.this]
 }
 
@@ -188,7 +188,7 @@ resource "aws_lb_listener" "http" {
     type = "forward"
     forward {
       target_group {
-        arn = aws_lb_target_group.frontend.arn
+        arn    = aws_lb_target_group.frontend.arn
         weight = 100
       }
     }
@@ -258,23 +258,23 @@ resource "aws_security_group" "rds" {
 }
 
 resource "aws_db_instance" "this" {
-  identifier             = "${var.app_name}-db"
-  engine                 = "postgres"
-  engine_version         = "16"
-  instance_class         = var.db_instance_class
-  allocated_storage      = 20
-  max_allocated_storage  = 100
-  storage_type           = "gp3"
-  db_name                = var.db_name
-  username               = var.db_username
-  password               = var.db_password
-  db_subnet_group_name   = aws_db_subnet_group.this.name
-  vpc_security_group_ids = [aws_security_group.rds.id]
-  skip_final_snapshot    = true
-  publicly_accessible    = false
+  identifier              = "${var.app_name}-db"
+  engine                  = "postgres"
+  engine_version          = "16"
+  instance_class          = var.db_instance_class
+  allocated_storage       = 20
+  max_allocated_storage   = 100
+  storage_type            = "gp3"
+  db_name                 = var.db_name
+  username                = var.db_username
+  password                = var.db_password
+  db_subnet_group_name    = aws_db_subnet_group.this.name
+  vpc_security_group_ids  = [aws_security_group.rds.id]
+  skip_final_snapshot     = true
+  publicly_accessible     = false
   backup_retention_period = 1
-  backup_window          = "03:00-04:00"
-  maintenance_window     = "mon:04:00-mon:05:00"
+  backup_window           = "03:00-04:00"
+  maintenance_window      = "mon:04:00-mon:05:00"
 }
 
 # Note: Using container storage for file uploads for now
@@ -292,8 +292,8 @@ resource "aws_ecs_task_definition" "server" {
 
   container_definitions = jsonencode([
     {
-      name  = "server"
-      image = "${aws_ecr_repository.backend.repository_url}:latest"
+      name         = "server"
+      image        = "${aws_ecr_repository.backend.repository_url}:latest"
       portMappings = [{ containerPort = 8080, hostPort = 8080 }]
       environment = [
         { name = "PORT", value = "8080" },
@@ -325,8 +325,8 @@ resource "aws_ecs_task_definition" "frontend" {
 
   container_definitions = jsonencode([
     {
-      name  = "frontend"
-      image = "${aws_ecr_repository.frontend.repository_url}:latest"
+      name         = "frontend"
+      image        = "${aws_ecr_repository.frontend.repository_url}:latest"
       portMappings = [{ containerPort = 80, hostPort = 80 }]
       environment = [
         { name = "VITE_API_URL", value = "http://${aws_lb.this.dns_name}" }
@@ -359,9 +359,9 @@ resource "aws_iam_role" "ecs_task_execution" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
-      Action = "sts:AssumeRole",
+      Action    = "sts:AssumeRole",
       Principal = { Service = "ecs-tasks.amazonaws.com" },
-      Effect = "Allow"
+      Effect    = "Allow"
     }]
   })
 }
@@ -376,9 +376,9 @@ resource "aws_iam_role" "ecs_task" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
-      Action = "sts:AssumeRole",
+      Action    = "sts:AssumeRole",
       Principal = { Service = "ecs-tasks.amazonaws.com" },
-      Effect = "Allow"
+      Effect    = "Allow"
     }]
   })
 }
@@ -394,8 +394,8 @@ resource "aws_ecs_service" "server" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets         = [aws_subnet.public_a.id, aws_subnet.public_b.id]
-    security_groups = [aws_security_group.ecs_service.id]
+    subnets          = [aws_subnet.public_a.id, aws_subnet.public_b.id]
+    security_groups  = [aws_security_group.ecs_service.id]
     assign_public_ip = true
   }
 
@@ -416,8 +416,8 @@ resource "aws_ecs_service" "frontend" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets         = [aws_subnet.public_a.id, aws_subnet.public_b.id]
-    security_groups = [aws_security_group.ecs_service.id]
+    subnets          = [aws_subnet.public_a.id, aws_subnet.public_b.id]
+    security_groups  = [aws_security_group.ecs_service.id]
     assign_public_ip = true
   }
 
