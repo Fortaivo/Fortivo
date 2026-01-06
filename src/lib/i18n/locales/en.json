@@ -40,7 +40,7 @@
     },
     "hero": {
       "title": "Your Digital Estate Manager",
-      "description": "Fortivo is your all-in-one solution for:",
+      "description": "Fortaivo is your all-in-one solution for:",
       "cta": "Get Started",
       "features": [
         "Tracking physical, digital, and financial assets",
@@ -80,7 +80,31 @@
     },
     "form": {
       "add": "Add Asset",
-      "edit": "Edit Asset"
+      "edit": "Edit Asset",
+      "update": "Update Asset",
+      "fields": {
+        "name": "Asset Name",
+        "namePlaceholder": "Enter asset name",
+        "type": "Asset Type",
+        "description": "Description",
+        "descriptionPlaceholder": "Enter asset description",
+        "estimatedValue": "Estimated Value",
+        "valuePlaceholder": "0.00",
+        "location": "Location",
+        "locationPlaceholder": "Enter asset location",
+        "beneficiary": "Assign to Beneficiary",
+        "selectBeneficiary": "Select a beneficiary",
+        "required": "*"
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "saving": "Saving...",
+        "addAsset": "Add Asset",
+        "updateAsset": "Update Asset"
+      },
+      "errors": {
+        "failedToSave": "Failed to save asset"
+      }
     },
     "stats": {
       "totalAssets": "Total Assets",
@@ -94,6 +118,89 @@
       "beneficiaries": "Add and manage your beneficiaries",
       "documents": "Store and organize important documents",
       "subscription": "View and manage your subscription"
+    }
+  },
+  "beneficiaries": {
+    "title": "Beneficiaries",
+    "subtitle": "Manage your beneficiaries and their contact details.",
+    "empty": {
+      "title": "No beneficiaries yet",
+      "description": "Add beneficiaries to specify who should inherit your assets.",
+      "planLimit": "Your {{tier}} plan allows {{limit}} beneficiary",
+      "planLimitPlural": "Your {{tier}} plan allows {{limit}} beneficiaries"
+    },
+    "limits": {
+      "remaining": "{{count}} slot remaining ({{used}}/{{limit}} used)",
+      "remainingPlural": "{{count}} slots remaining ({{used}}/{{limit}} used)"
+    },
+    "table": {
+      "name": "Name",
+      "relationship": "Relationship",
+      "relationshipNotSpecified": "Relationship not specified",
+      "email": "Email",
+      "phone": "Phone",
+      "actions": "Actions",
+      "confirmDelete": "Are you sure you want to delete this beneficiary?",
+      "editDetails": "Edit Details"
+    },
+    "form": {
+      "add": "Add Beneficiary",
+      "edit": "Edit Beneficiary",
+      "update": "Update Beneficiary",
+      "fields": {
+        "fullName": "Full Name",
+        "namePlaceholder": "Enter beneficiary name",
+        "relationship": "Relationship",
+        "relationshipPlaceholder": "Enter relationship (e.g., spouse, child, friend)",
+        "email": "Email Address",
+        "emailPlaceholder": "Enter email address",
+        "phone": "Phone Number",
+        "phonePlaceholder": "Enter phone number",
+        "required": "*"
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "saving": "Saving...",
+        "addBeneficiary": "Add Beneficiary",
+        "updateBeneficiary": "Update Beneficiary"
+      },
+      "errors": {
+        "failedToSave": "Failed to save beneficiary"
+      }
+    }
+  },
+  "documents": {
+    "title": "Documents",
+    "empty": {
+      "title": "No documents",
+      "description": "Upload your first document."
+    },
+    "table": {
+      "name": "Document Name",
+      "type": "Type",
+      "size": "Size",
+      "uploaded": "Uploaded",
+      "actions": "Actions",
+      "confirmDelete": "Are you sure you want to delete this document?"
+    },
+    "form": {
+      "upload": "Upload Document",
+      "fields": {
+        "name": "Document Name",
+        "namePlaceholder": "Enter document name",
+        "file": "Select File",
+        "selectFile": "Choose a file",
+        "required": "*"
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "uploading": "Uploading...",
+        "upload": "Upload"
+      },
+      "errors": {
+        "failedToUpload": "Failed to upload document",
+        "noFile": "Please select a file"
+      }
     }
   }
 }

@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  profile   Profile?
+  assets    Asset[]
+  beneficiaries Beneficiary[]
+  subscriptions Subscription[]
+}
+
+model Profile {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id])
+
+  // Basic Information
+  fullName         String?
+  dateOfBirth      DateTime?
+  avatarUrl        String?
+
+  // Contact Information
+  phoneNumber      String?
+  email            String?
+
+  // Address
+  streetAddress    String?
+  city             String?
+  state            String?
+  zipCode          String?
+  country          String?
+
+  // Emergency Contact
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  emergencyContactRelationship String?
+
+  // Legacy Planning
+  specialInstructions String?  // Text area for special wishes, funeral instructions, etc.
+  executorName     String?
+  executorPhone    String?
+  executorEmail    String?
+
+  // System
+  subscriptionTier Tier     @default(free)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Asset {
+  id             String       @id @default(uuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  name           String
+  type           AssetType
+  description    String?
+  estimatedValue Float?
+  beneficiaryId  String?
+  beneficiary    Beneficiary? @relation(fields: [beneficiaryId], references: [id])
+  location       String?
+  acquisitionDate DateTime?
+  documents      AssetDocument[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model Beneficiary {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  fullName  String
+  relationship String?
+  contactEmail String?
+  contactPhone String?
+  assets    Asset[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AssetDocument {
+  id        String   @id @default(uuid())
+  assetId   String
+  asset     Asset    @relation(fields: [assetId], references: [id])
+  name      String
+  filePath  String
+  fileType  FileType
+  fileSize  Int
+  uploadedAt DateTime @default(now())
+}
+
+model Subscription {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  tier      Tier
+  status    SubscriptionStatus
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Tier {
+  free
+  pro
+  premium
+}
+
+enum AssetType {
+  financial
+  physical
+  digital
+  other
+}
+
+enum FileType {
+  pdf
+  image
+  document
+}
+
+enum SubscriptionStatus {
+  active
+  canceled
+  past_due
+}
+

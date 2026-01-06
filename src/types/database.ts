@@ -1,7 +1,33 @@
 export interface Profile {
   id: string;
+  // Basic Information
   full_name: string | null;
+  date_of_birth: string | null;
   avatar_url: string | null;
+
+  // Contact Information
+  phone_number: string | null;
+  email: string | null;
+
+  // Address
+  street_address: string | null;
+  city: string | null;
+  state: string | null;
+  zip_code: string | null;
+  country: string | null;
+
+  // Emergency Contact
+  emergency_contact_name: string | null;
+  emergency_contact_phone: string | null;
+  emergency_contact_relationship: string | null;
+
+  // Legacy Planning
+  special_instructions: string | null;
+  executor_name: string | null;
+  executor_phone: string | null;
+  executor_email: string | null;
+
+  // System
   subscription_tier: 'free' | 'pro' | 'premium';
   created_at: string;
   updated_at: string;

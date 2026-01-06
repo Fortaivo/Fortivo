@@ -38,7 +38,7 @@ export function Navigation() {
       <nav className="space-y-1">
         {navigation.map((item) => {
         const isActive = location.pathname === item.href ||
-          (item.name === t('common.navigation.documents') && location.pathname.includes('/documents'));
+          (item.href === ROUTES.ASSETS && location.pathname.includes('/documents'));
 
         return (
           <NavLink

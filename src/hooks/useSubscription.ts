@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { type Subscription } from '../types/database';
 import { supabase } from '../lib/supabase';
 import { createCheckoutSession } from '../lib/stripe';
+import { API_BASE_URL, apiGet, apiPost } from '../lib/api';
 
 export function useSubscription() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -15,17 +16,25 @@ export function useSubscription() {
   async function fetchSubscription() {
     try {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      if (API_BASE_URL) {
+        // Local API mode
+        const subscriptions = await apiGet<Subscription[]>('/api/subscriptions');
+        setSubscription(subscriptions[0] ?? null);
+      } else {
+        // Supabase mode
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
 
-      if (error && error.code !== 'PGRST116') throw error;
-      setSubscription(data?.[0] ?? null);
+        const { data, error } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error && error.code !== 'PGRST116') throw error;
+        setSubscription(data?.[0] ?? null);
+      }
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch subscription'));
     } finally {
@@ -37,53 +46,63 @@ export function useSubscription() {
     try {
       setError(null);
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
       // Prevent duplicate subscription
       if (subscription?.status === 'active' && subscription.tier === tier) {
         throw new Error('You are already subscribed to this plan');
       }
 
-      if (tier === 'free') {
-        const now = new Date();
-        const farFuture = new Date();
-        farFuture.setFullYear(farFuture.getFullYear() + 100);
-
+      if (API_BASE_URL) {
+        // Local API mode - direct tier switching (debug mode)
         setLoading(true);
-        const { data, error } = await supabase
-          .from('subscriptions')
-          .upsert({
-            user_id: user.id,
-            tier,
-            status: 'active',
-            current_period_start: now.toISOString(),
-            current_period_end: farFuture.toISOString(),
-            stripe_customer_id: null,
-            stripe_subscription_id: null,
-            stripe_price_id: null,
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-        setSubscription(data);
+        const newSubscription = await apiPost<Subscription>('/api/subscriptions', { tier });
+        setSubscription(newSubscription);
         setLoading(false);
-        return data;
-      }
+        return newSubscription;
+      } else {
+        // Supabase mode
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
 
-      // For paid tiers, redirect to Stripe checkout
-      const PRICE_IDS = {
-        pro: 'price_pro_monthly',
-        premium: 'price_premium_monthly'
-      };
-      
-      const priceId = PRICE_IDS[tier];
-      if (!priceId) {
-        throw new Error('Invalid subscription tier');
-      }
+        if (tier === 'free') {
+          const now = new Date();
+          const farFuture = new Date();
+          farFuture.setFullYear(farFuture.getFullYear() + 100);
 
-      await createCheckoutSession(priceId);
+          setLoading(true);
+          const { data, error } = await supabase
+            .from('subscriptions')
+            .upsert({
+              user_id: user.id,
+              tier,
+              status: 'active',
+              current_period_start: now.toISOString(),
+              current_period_end: farFuture.toISOString(),
+              stripe_customer_id: null,
+              stripe_subscription_id: null,
+              stripe_price_id: null,
+            })
+            .select()
+            .single();
+
+          if (error) throw error;
+          setSubscription(data);
+          setLoading(false);
+          return data;
+        }
+
+        // For paid tiers, redirect to Stripe checkout
+        const PRICE_IDS = {
+          pro: 'price_pro_monthly',
+          premium: 'price_premium_monthly'
+        };
+
+        const priceId = PRICE_IDS[tier];
+        if (!priceId) {
+          throw new Error('Invalid subscription tier');
+        }
+
+        await createCheckoutSession(priceId);
+      }
     } catch (err) {
       let message = 'Failed to update subscription';
       if (err instanceof Error) {

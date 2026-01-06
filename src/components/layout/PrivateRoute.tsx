@@ -1,6 +1,6 @@
-import { Navigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../lib/auth';
-import { ROUTES } from '../../lib/routes';
+import { Loader2 } from 'lucide-react';
 
 interface PrivateRouteProps {
   children: React.ReactNode;
@@ -11,12 +11,16 @@ export function PrivateRoute({ children }: PrivateRouteProps) {
   const location = useLocation();
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+      </div>
+    );
   }
 
   if (!user) {
-    // Redirect to login but save the attempted URL
-    return <Navigate to={ROUTES.AUTH.LOGIN} state={{ from: location }} replace />;
+    // App-level auth gate renders AuthScreen when not authenticated
+    return null;
   }
 
   return <>{children}</>;

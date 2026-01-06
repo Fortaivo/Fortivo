@@ -2,19 +2,26 @@ import { FileText, Image, FileIcon, Trash2, Download, Eye } from 'lucide-react';
 import { type AssetDocument } from '../../types/database';
 import { Button } from '../ui/Button';
 import { supabase } from '../../lib/supabase';
+import { API_BASE_URL } from '../../lib/api';
 
 interface DocumentListProps {
   documents: AssetDocument[];
-  onDelete: (document: AssetDocument) => void;
+  onDelete: (id: string, filePath: string) => void;
 }
 
 async function getDocumentUrl(filePath: string): Promise<string> {
-  const { data } = await supabase.storage
-    .from('asset-documents')
-    .createSignedUrl(filePath, 3600); // 1 hour expiry
+  if (API_BASE_URL) {
+    // Local API mode - files are served from /uploads
+    return `${API_BASE_URL}${filePath}`;
+  } else {
+    // Supabase mode
+    const { data } = await supabase.storage
+      .from('asset-documents')
+      .createSignedUrl(filePath, 3600); // 1 hour expiry
 
-  if (!data?.signedUrl) throw new Error('Failed to get document URL');
-  return data.signedUrl;
+    if (!data?.signedUrl) throw new Error('Failed to get document URL');
+    return data.signedUrl;
+  }
 }
 
 export function DocumentList({ documents, onDelete }: DocumentListProps) {
@@ -98,7 +105,7 @@ export function DocumentList({ documents, onDelete }: DocumentListProps) {
                 size="sm"
                 onClick={() => {
                   if (window.confirm('Are you sure you want to delete this document?')) {
-                    onDelete(document);
+                    onDelete(document.id, document.file_path);
                   }
                 }}
               >

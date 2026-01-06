@@ -1,0 +1,16 @@
+-- AlterTable
+ALTER TABLE "Profile" ADD COLUMN     "city" TEXT,
+ADD COLUMN     "country" TEXT,
+ADD COLUMN     "dateOfBirth" TIMESTAMP(3),
+ADD COLUMN     "email" TEXT,
+ADD COLUMN     "emergencyContactName" TEXT,
+ADD COLUMN     "emergencyContactPhone" TEXT,
+ADD COLUMN     "emergencyContactRelationship" TEXT,
+ADD COLUMN     "executorEmail" TEXT,
+ADD COLUMN     "executorName" TEXT,
+ADD COLUMN     "executorPhone" TEXT,
+ADD COLUMN     "phoneNumber" TEXT,
+ADD COLUMN     "specialInstructions" TEXT,
+ADD COLUMN     "state" TEXT,
+ADD COLUMN     "streetAddress" TEXT,
+ADD COLUMN     "zipCode" TEXT;

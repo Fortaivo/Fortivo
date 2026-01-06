@@ -22,3 +22,21 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Documentation archives
+archived-docs/
+
+# PDF files
+*.pdf
+
+# Documentation folder
+docs/
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Database
+*.db
+*.sqlite

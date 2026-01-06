@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Check } from 'lucide-react';
+import { Check, Zap } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useSubscription } from '../../hooks/useSubscription';
 import { toast } from '../../lib/toast';
 import type { Subscription } from '../../types/database';
+import { API_BASE_URL } from '../../lib/api';
 
 const PLANS = [
   {
@@ -70,6 +71,20 @@ export function SubscriptionPlans() {
 
   return (
     <div className="space-y-8">
+      {API_BASE_URL && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+          <div className="flex items-center">
+            <Zap className="h-5 w-5 text-yellow-400 mr-2" />
+            <div>
+              <p className="text-sm font-medium text-yellow-800">DEBUG MODE</p>
+              <p className="text-sm text-yellow-700">
+                Running in local development mode. You can instantly switch between plans without payment.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {error && (
         <div className="bg-red-50 p-4 rounded-md">
           <div className="text-sm text-red-700">{error}</div>

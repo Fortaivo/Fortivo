@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { signIn } from '../../lib/auth';
+import { signIn, resetPassword } from '../../lib/auth';
+import { API_BASE_URL } from '../../lib/api';
 import { Button } from '../ui/Button';
 
 interface LoginFormProps {
@@ -42,8 +43,14 @@ export function LoginForm({ onSuccess, onSwitch }: LoginFormProps) {
       }
       setLoading(true);
       setError(null);
-      await signIn({ email, password, rememberMe });
-      onSuccess();
+      const result = await signIn({ email, password, rememberMe });
+      if (API_BASE_URL || result.user) {
+        // In API mode or successful Supabase login, trigger success immediately
+        onSuccess();
+      } else {
+        // In Supabase mode but no user returned, wait for auth state change
+        setTimeout(onSuccess, 100);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to sign in';
       setError(message.includes('invalid_credentials') ? 'Invalid email or password' : message);

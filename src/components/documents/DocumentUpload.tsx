@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Upload } from 'lucide-react';
 import { Button } from '../ui/Button';
 
@@ -8,6 +9,7 @@ interface DocumentUploadProps {
 }
 
 export function DocumentUpload({ onUpload, disabled }: DocumentUploadProps) {
+  const { t } = useTranslation();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -26,7 +28,7 @@ export function DocumentUpload({ onUpload, disabled }: DocumentUploadProps) {
         fileInputRef.current.value = '';
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to upload document');
+      setError(err instanceof Error ? err.message : t('documents.form.errors.failedToUpload'));
     } finally {
       setUploading(false);
     }
@@ -42,7 +44,7 @@ export function DocumentUpload({ onUpload, disabled }: DocumentUploadProps) {
 
       <div>
         <label htmlFor="document_name" className="block text-sm font-medium text-gray-700">
-          Document Name
+          {t('documents.form.fields.name')}
         </label>
         <input
           type="text"
@@ -50,14 +52,14 @@ export function DocumentUpload({ onUpload, disabled }: DocumentUploadProps) {
           value={documentName}
           onChange={(e) => setDocumentName(e.target.value)}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-          placeholder="Enter document name (optional)"
+          placeholder={t('documents.form.fields.namePlaceholder')}
         />
       </div>
 
       <div className="flex items-center justify-center w-full">
         <label className="w-full flex flex-col items-center px-4 py-6 bg-white text-gray-400 rounded-lg shadow-lg tracking-wide border border-gray-300 cursor-pointer hover:bg-gray-50">
           <Upload className="w-8 h-8" />
-          <span className="mt-2 text-sm">{uploading ? 'Uploading...' : 'Select a file'}</span>
+          <span className="mt-2 text-sm">{uploading ? t('documents.form.buttons.uploading') : t('documents.form.fields.selectFile')}</span>
           <input
             type="file"
             className="hidden"

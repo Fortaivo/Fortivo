@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { type AssetDocument } from '../types/database';
 import { supabase } from '../lib/supabase';
+import { API_BASE_URL } from '../lib/api';
 
 export function useAssetDocuments(assetId: string) {
   const [documents, setDocuments] = useState<AssetDocument[]>([]);
@@ -16,14 +17,26 @@ export function useAssetDocuments(assetId: string) {
   async function fetchDocuments() {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('asset_documents')
-        .select('*')
-        .eq('asset_id', assetId)
-        .order('uploaded_at', { ascending: false });
 
-      if (error) throw error;
-      setDocuments(data);
+      if (API_BASE_URL) {
+        // Local API mode
+        const response = await fetch(`${API_BASE_URL}/api/assets/${assetId}/documents`, {
+          credentials: 'include',
+        });
+        if (!response.ok) throw new Error('Failed to fetch documents');
+        const data = await response.json();
+        setDocuments(data);
+      } else {
+        // Supabase mode
+        const { data, error } = await supabase
+          .from('asset_documents')
+          .select('*')
+          .eq('asset_id', assetId)
+          .order('uploaded_at', { ascending: false });
+
+        if (error) throw error;
+        setDocuments(data);
+      }
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch documents'));
     } finally {
@@ -33,54 +46,85 @@ export function useAssetDocuments(assetId: string) {
 
   async function uploadDocument(file: File, name: string) {
     try {
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${assetId}/${crypto.randomUUID()}.${fileExt}`;
+      if (API_BASE_URL) {
+        // Local API mode
+        const formData = new FormData();
+        formData.append('document', file);
+        formData.append('name', name || file.name);
 
-      // Upload file to storage
-      const { error: uploadError } = await supabase.storage
-        .from('asset-documents')
-        .upload(filePath, file);
+        const response = await fetch(`${API_BASE_URL}/api/assets/${assetId}/documents`, {
+          method: 'POST',
+          credentials: 'include',
+          body: formData,
+        });
 
-      if (uploadError) throw uploadError;
+        if (!response.ok) throw new Error('Failed to upload document');
+        const data = await response.json();
+        setDocuments((prev) => [data, ...prev]);
+        return data;
+      } else {
+        // Supabase mode
+        const fileExt = file.name.split('.').pop();
+        const filePath = `${assetId}/${crypto.randomUUID()}.${fileExt}`;
 
-      // Create document record
-      const { data, error: insertError } = await supabase
-        .from('asset_documents')
-        .insert([{
-          asset_id: assetId,
-          name: name || file.name,
-          file_path: filePath,
-          file_type: getFileType(file.type),
-          file_size: file.size,
-        }])
-        .select()
-        .single();
+        // Upload file to storage
+        const { error: uploadError } = await supabase.storage
+          .from('asset-documents')
+          .upload(filePath, file);
 
-      if (insertError) throw insertError;
-      setDocuments((prev) => [data, ...prev]);
-      return data;
+        if (uploadError) throw uploadError;
+
+        // Create document record
+        const { data, error: insertError } = await supabase
+          .from('asset_documents')
+          .insert([{
+            asset_id: assetId,
+            name: name || file.name,
+            file_path: filePath,
+            file_type: getFileType(file.type),
+            file_size: file.size,
+          }])
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        setDocuments((prev) => [data, ...prev]);
+        return data;
+      }
     } catch (err) {
       throw err instanceof Error ? err : new Error('Failed to upload document');
     }
   }
 
-  async function deleteDocument(id: string, filePath: string) {
+  async function deleteDocument(id: string, filePath?: string) {
     try {
-      // Delete file from storage
-      const { error: storageError } = await supabase.storage
-        .from('asset-documents')
-        .remove([filePath]);
+      if (API_BASE_URL) {
+        // Local API mode
+        const response = await fetch(`${API_BASE_URL}/api/assets/${assetId}/documents/${id}`, {
+          method: 'DELETE',
+          credentials: 'include',
+        });
 
-      if (storageError) throw storageError;
+        if (!response.ok) throw new Error('Failed to delete document');
+        setDocuments((prev) => prev.filter((d) => d.id !== id));
+      } else {
+        // Supabase mode
+        // Delete file from storage
+        const { error: storageError } = await supabase.storage
+          .from('asset-documents')
+          .remove([filePath || '']);
 
-      // Delete document record
-      const { error: deleteError } = await supabase
-        .from('asset_documents')
-        .delete()
-        .eq('id', id);
+        if (storageError) throw storageError;
 
-      if (deleteError) throw deleteError;
-      setDocuments((prev) => prev.filter((d) => d.id !== id));
+        // Delete document record
+        const { error: deleteError } = await supabase
+          .from('asset_documents')
+          .delete()
+          .eq('id', id);
+
+        if (deleteError) throw deleteError;
+        setDocuments((prev) => prev.filter((d) => d.id !== id));
+      }
     } catch (err) {
       throw err instanceof Error ? err : new Error('Failed to delete document');
     }

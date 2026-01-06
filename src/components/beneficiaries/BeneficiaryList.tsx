@@ -1,7 +1,7 @@
 import { Users, Plus, Mail, Phone, Heart } from 'lucide-react';
 import { type Beneficiary } from '../../types/database';
 import { Button } from '../ui/Button';
-
+import { useTranslation } from 'react-i18next';
 import { useProfile } from '../../hooks/useProfile';
 
 interface BeneficiaryListProps {
@@ -12,15 +12,16 @@ interface BeneficiaryListProps {
 }
 
 export function BeneficiaryList({ beneficiaries, onEdit, onDelete, onAdd }: BeneficiaryListProps) {
+  const { t } = useTranslation();
   const { profile } = useProfile();
-  
+
   // Calculate remaining beneficiary slots
   const limits = {
     free: 1,
     pro: 5,
     premium: Infinity
   };
-  
+
   const limit = profile ? limits[profile.subscription_tier] : 0;
   const remaining = Math.max(0, limit - beneficiaries.length);
 
@@ -28,19 +29,22 @@ export function BeneficiaryList({ beneficiaries, onEdit, onDelete, onAdd }: Bene
     return (
       <div className="text-center py-16 px-4">
         <Users className="mx-auto h-12 w-12 text-gray-400" />
-        <h3 className="mt-4 text-lg font-medium text-gray-900">No beneficiaries yet</h3>
+        <h3 className="mt-4 text-lg font-medium text-gray-900">{t('beneficiaries.empty.title')}</h3>
         <p className="mt-2 text-sm text-gray-500 max-w-sm mx-auto">
-          Add beneficiaries to specify who should inherit your assets. 
+          {t('beneficiaries.empty.description')}
           {profile && profile.subscription_tier !== 'premium' && (
             <span className="block mt-1">
-              Your {profile.subscription_tier} plan allows {limit} beneficiary{limit !== 1 ? 'ies' : ''}.
+              {limit !== 1
+                ? t('beneficiaries.empty.planLimitPlural', { tier: profile.subscription_tier, limit })
+                : t('beneficiaries.empty.planLimit', { tier: profile.subscription_tier, limit })
+              }
             </span>
           )}
         </p>
         <div className="mt-6">
           <Button onClick={onAdd} size="lg">
             <Plus className="h-5 w-5 mr-2" />
-            Add Beneficiary
+            {t('beneficiaries.form.add')}
           </Button>
         </div>
       </div>
@@ -51,24 +55,26 @@ export function BeneficiaryList({ beneficiaries, onEdit, onDelete, onAdd }: Bene
     <div>
       <div className="sm:flex sm:items-center mb-4">
         <div className="sm:flex-auto">
-          <h2 className="text-xl font-semibold text-gray-900">Beneficiaries</h2>
+          <h2 className="text-xl font-semibold text-gray-900">{t('beneficiaries.title')}</h2>
           <p className="mt-2 text-sm text-gray-700 space-y-1">
-            <span className="block">Manage your beneficiaries and their contact details.</span>
+            <span className="block">{t('beneficiaries.subtitle')}</span>
             {profile && profile.subscription_tier !== 'premium' && (
               <span className="block text-indigo-600">
-                {remaining} {remaining === 1 ? 'slot' : 'slots'} remaining 
-                ({beneficiaries.length}/{limit} used)
+                {remaining === 1
+                  ? t('beneficiaries.limits.remaining', { count: remaining, used: beneficiaries.length, limit })
+                  : t('beneficiaries.limits.remainingPlural', { count: remaining, used: beneficiaries.length, limit })
+                }
               </span>
             )}
           </p>
         </div>
         <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
-          <Button 
-            onClick={onAdd} 
+          <Button
+            onClick={onAdd}
             disabled={beneficiaries.length >= limit}
           >
             <Plus className="h-5 w-5 mr-2" />
-            Add Beneficiary
+            {t('beneficiaries.form.add')}
           </Button>
         </div>
       </div>
@@ -87,7 +93,7 @@ export function BeneficiaryList({ beneficiaries, onEdit, onDelete, onAdd }: Bene
                   </h3>
                   <div className="mt-1 flex items-center text-sm text-gray-500">
                     <Heart className="h-4 w-4 mr-1" />
-                    {beneficiary.relationship || 'Relationship not specified'}
+                    {beneficiary.relationship || t('beneficiaries.table.relationshipNotSpecified')}
                   </div>
                 </div>
               </div>
@@ -119,18 +125,18 @@ export function BeneficiaryList({ beneficiaries, onEdit, onDelete, onAdd }: Bene
 
               <div className="mt-6 flex space-x-3">
                 <Button variant="secondary" size="sm" className="flex-1" onClick={() => onEdit(beneficiary)}>
-                  Edit Details
+                  {t('beneficiaries.table.editDetails')}
                 </Button>
-                <Button 
-                  variant="danger" 
+                <Button
+                  variant="danger"
                   size="sm"
                   onClick={() => {
-                    if (window.confirm('Are you sure you want to delete this beneficiary?')) {
+                    if (window.confirm(t('beneficiaries.table.confirmDelete'))) {
                       onDelete(beneficiary);
                     }
                   }
                 }>
-                  Delete
+                  {t('common.actions.delete')}
                 </Button>
               </div>
             </div>

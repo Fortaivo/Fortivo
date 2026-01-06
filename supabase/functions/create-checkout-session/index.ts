@@ -58,7 +58,7 @@ serve(async (req) => {
     }
 
     // Get or create Stripe customer
-    let { data: subscription } = await supabase
+    const { data: subscription } = await supabase
       .from('subscriptions')
       .select('stripe_customer_id, stripe_subscription_id')
       .eq('user_id', user.id)

@@ -30,7 +30,7 @@ export function Logo() {
           <div className="absolute inset-0 border-2 border-indigo-600 rounded-full opacity-50"></div>
         </div>
         <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-indigo-800 bg-clip-text text-transparent">
-          Fortivo
+          Fortaivo
         </span>
       </div>
       <div className={cn(

@@ -20,7 +20,7 @@
   "home": {
     "hero": {
       "title": "Tu Gestor de Patrimonio Digital",
-      "description": "Fortivo es tu solución todo en uno para:",
+      "description": "Fortaivo es tu solución todo en uno para:",
       "features": [
         "Seguimiento de activos físicos, digitales y financieros",
         "Gestión de beneficiarios y planes de herencia",
@@ -36,13 +36,150 @@
       "title": "Sin activos",
       "description": "Comienza agregando tu primer activo."
     },
+    "filters": {
+      "search": "Buscar activos...",
+      "allTypes": "Todos los Tipos",
+      "allBeneficiaries": "Todos los Beneficiarios",
+      "noBeneficiary": "Sin Beneficiario"
+    },
+    "types": {
+      "financial": "Financiero",
+      "physical": "Físico",
+      "digital": "Digital",
+      "other": "Otro"
+    },
     "table": {
       "name": "Nombre",
       "type": "Tipo",
       "value": "Valor",
       "location": "Ubicación",
       "beneficiary": "Beneficiario",
-      "actions": "Acciones"
+      "actions": "Acciones",
+      "confirmDelete": "¿Está seguro de que desea eliminar este activo?"
+    },
+    "form": {
+      "add": "Agregar Activo",
+      "edit": "Editar Activo",
+      "update": "Actualizar Activo",
+      "fields": {
+        "name": "Nombre del Activo",
+        "namePlaceholder": "Ingrese el nombre del activo",
+        "type": "Tipo de Activo",
+        "description": "Descripción",
+        "descriptionPlaceholder": "Ingrese la descripción del activo",
+        "estimatedValue": "Valor Estimado",
+        "valuePlaceholder": "0.00",
+        "location": "Ubicación",
+        "locationPlaceholder": "Ingrese la ubicación del activo",
+        "beneficiary": "Asignar a Beneficiario",
+        "selectBeneficiary": "Seleccione un beneficiario",
+        "required": "*"
+      },
+      "buttons": {
+        "cancel": "Cancelar",
+        "saving": "Guardando...",
+        "addAsset": "Agregar Activo",
+        "updateAsset": "Actualizar Activo"
+      },
+      "errors": {
+        "failedToSave": "Error al guardar el activo"
+      }
+    },
+    "stats": {
+      "totalAssets": "Total de Activos",
+      "activeUsers": "Usuarios Activos",
+      "documentSecured": "Documentos Asegurados",
+      "satisfaction": "Satisfacción del Cliente"
+    },
+    "features": {
+      "title": "Características Principales",
+      "assets": "Administre sus activos y realice un seguimiento de su valor",
+      "beneficiaries": "Agregue y administre sus beneficiarios",
+      "documents": "Almacene y organice documentos importantes",
+      "subscription": "Vea y administre su suscripción"
+    }
+  },
+  "beneficiaries": {
+    "title": "Beneficiarios",
+    "subtitle": "Administre sus beneficiarios y sus datos de contacto.",
+    "empty": {
+      "title": "Aún no hay beneficiarios",
+      "description": "Agregue beneficiarios para especificar quién heredará sus activos.",
+      "planLimit": "Su plan {{tier}} permite {{limit}} beneficiario",
+      "planLimitPlural": "Su plan {{tier}} permite {{limit}} beneficiarios"
+    },
+    "limits": {
+      "remaining": "{{count}} espacio restante ({{used}}/{{limit}} usado)",
+      "remainingPlural": "{{count}} espacios restantes ({{used}}/{{limit}} usados)"
+    },
+    "table": {
+      "name": "Nombre",
+      "relationship": "Relación",
+      "relationshipNotSpecified": "Relación no especificada",
+      "email": "Correo Electrónico",
+      "phone": "Teléfono",
+      "actions": "Acciones",
+      "confirmDelete": "¿Está seguro de que desea eliminar este beneficiario?",
+      "editDetails": "Editar Detalles"
+    },
+    "form": {
+      "add": "Agregar Beneficiario",
+      "edit": "Editar Beneficiario",
+      "update": "Actualizar Beneficiario",
+      "fields": {
+        "fullName": "Nombre Completo",
+        "namePlaceholder": "Ingrese el nombre del beneficiario",
+        "relationship": "Relación",
+        "relationshipPlaceholder": "Ingrese la relación (ej: cónyuge, hijo, amigo)",
+        "email": "Correo Electrónico",
+        "emailPlaceholder": "Ingrese el correo electrónico",
+        "phone": "Número de Teléfono",
+        "phonePlaceholder": "Ingrese el número de teléfono",
+        "required": "*"
+      },
+      "buttons": {
+        "cancel": "Cancelar",
+        "saving": "Guardando...",
+        "addBeneficiary": "Agregar Beneficiario",
+        "updateBeneficiary": "Actualizar Beneficiario"
+      },
+      "errors": {
+        "failedToSave": "Error al guardar el beneficiario"
+      }
+    }
+  },
+  "documents": {
+    "title": "Documentos",
+    "empty": {
+      "title": "Sin documentos",
+      "description": "Cargue su primer documento."
+    },
+    "table": {
+      "name": "Nombre del Documento",
+      "type": "Tipo",
+      "size": "Tamaño",
+      "uploaded": "Cargado",
+      "actions": "Acciones",
+      "confirmDelete": "¿Está seguro de que desea eliminar este documento?"
+    },
+    "form": {
+      "upload": "Cargar Documento",
+      "fields": {
+        "name": "Nombre del Documento",
+        "namePlaceholder": "Ingrese el nombre del documento",
+        "file": "Seleccionar Archivo",
+        "selectFile": "Elija un archivo",
+        "required": "*"
+      },
+      "buttons": {
+        "cancel": "Cancelar",
+        "uploading": "Cargando...",
+        "upload": "Cargar"
+      },
+      "errors": {
+        "failedToUpload": "Error al cargar el documento",
+        "noFile": "Por favor seleccione un archivo"
+      }
     }
   }
 }

@@ -109,12 +109,12 @@ export function AssetList({ assets, onEdit, onDelete, onAdd }: AssetListProps) {
       <table className="min-w-full divide-y divide-gray-200 table-fixed">
         <thead className="bg-gray-50">
           <tr>
-            <th className="w-1/4 px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset Name</th>
-            <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-            <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estimated Value</th>
-            <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Storage Location</th>
-            <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>
-            <th className="w-1/4 px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            <th className="w-1/4 px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('assets.table.name')}</th>
+            <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('assets.table.type')}</th>
+            <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('assets.table.value')}</th>
+            <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('assets.table.location')}</th>
+            <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('assets.table.beneficiary')}</th>
+            <th className="w-1/4 px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t('assets.table.actions')}</th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
@@ -135,14 +135,14 @@ export function AssetList({ assets, onEdit, onDelete, onAdd }: AssetListProps) {
                       size="sm"
                       onClick={() => onEdit(asset)}
                     >
-                      Edit
+                      {t('common.actions.edit')}
                     </Button>
                     <Button
                       variant="secondary"
                       size="sm"
                       onClick={() => navigate(`/assets/${asset.id}/documents`)}
                     >
-                      Documents
+                      {t('common.navigation.documents')}
                     </Button>
                     <Button
                       variant="danger"
@@ -153,7 +153,7 @@ export function AssetList({ assets, onEdit, onDelete, onAdd }: AssetListProps) {
                         }
                       }}
                     >
-                      Delete
+                      {t('common.actions.delete')}
                     </Button>
                   </div>
                 </div>

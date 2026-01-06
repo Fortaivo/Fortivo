@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { signUp } from '../../lib/auth';
+import { API_BASE_URL } from '../../lib/api';
 import { Button } from '../ui/Button';
 
 interface SignupFormProps {
@@ -28,8 +29,14 @@ export function SignupForm({ onSuccess, onSwitch }: SignupFormProps) {
       }
       setLoading(true);
       setError(null);
-      await signUp({ email, password, acceptedTerms });
-      setVerificationSent(true);
+      const result = await signUp({ email, password, acceptedTerms });
+      if (API_BASE_URL) {
+        // In API mode, user is immediately logged in after signup
+        onSuccess();
+      } else {
+        // In Supabase mode, show verification message
+        setVerificationSent(true);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to sign up';
       setError(message.includes('user_already_exists') ? 'An account with this email already exists' : message);
@@ -110,9 +117,10 @@ export function SignupForm({ onSuccess, onSwitch }: SignupFormProps) {
           />
           <label htmlFor="terms" className="ml-2 block text-sm text-gray-900">
             I accept the{' '}
-            <a href="/terms" className="text-indigo-600 hover:text-indigo-500">
+            <a href="/terms/en.html" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-500">
               terms and conditions
             </a>
+            {' '}(<a href="/terms/es.html" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-500">Español</a> | <a href="/terms/pt.html" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-500">Português</a>)
           </label>
         </div>
 
