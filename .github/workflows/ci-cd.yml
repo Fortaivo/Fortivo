@@ -214,22 +214,24 @@ jobs:
           aws ecs wait services-stable \
             --cluster ${{ env.ECS_CLUSTER }} \
             --services ${{ env.ECS_BACKEND_SERVICE }} \
-            --region ${{ env.AWS_REGION }} \
-            --max-attempts 60 || echo "Backend service stabilization timeout - check manually"
+            --region ${{ env.AWS_REGION }} || echo "Backend service stabilization timeout - check manually"
           
           echo "Waiting for frontend service to stabilize..."
           aws ecs wait services-stable \
             --cluster ${{ env.ECS_CLUSTER }} \
             --services ${{ env.ECS_FRONTEND_SERVICE }} \
-            --region ${{ env.AWS_REGION }} \
-            --max-attempts 60 || echo "Frontend service stabilization timeout - check manually"
+            --region ${{ env.AWS_REGION }} || echo "Frontend service stabilization timeout - check manually"
 
       - name: Get ALB URL
         id: alb-url
         run: |
-          cd infra/terraform
-          terraform init -backend=false
-          ALB_URL=$(terraform output -raw alb_url 2>/dev/null || echo "")
-          echo "url=$ALB_URL" >> $GITHUB_OUTPUT
-          echo "Application deployed to: $ALB_URL"
+          ALB_DNS=$(aws elbv2 describe-load-balancers --region ${{ env.AWS_REGION }} --query "LoadBalancers[?contains(LoadBalancerName, 'fortivo')].DNSName" --output text | head -n 1)
+          if [ -n "$ALB_DNS" ]; then
+            ALB_URL="http://$ALB_DNS"
+            echo "url=$ALB_URL" >> $GITHUB_OUTPUT
+            echo "Application deployed to: $ALB_URL"
+          else
+            echo "ALB not found"
+            echo "url=" >> $GITHUB_OUTPUT
+          fi
 
