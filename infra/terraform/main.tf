@@ -6,6 +6,15 @@ terraform {
       version = ">= 5.0"
     }
   }
+
+  backend "s3" {
+    bucket         = "fortivo-terraform-state-962795992254"
+    key            = "terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "fortivo-terraform-locks"
+    encrypt        = true
+    # Note: dynamodb_table is still supported, use_lockfile is for newer versions
+  }
 }
 
 provider "aws" {
@@ -16,6 +25,7 @@ provider "aws" {
 resource "aws_ecr_repository" "backend" {
   name                 = "${var.app_name}-backend"
   image_tag_mutability = "MUTABLE"
+  force_delete         = true
 
   image_scanning_configuration {
     scan_on_push = true
@@ -25,6 +35,7 @@ resource "aws_ecr_repository" "backend" {
 resource "aws_ecr_repository" "frontend" {
   name                 = "${var.app_name}-frontend"
   image_tag_mutability = "MUTABLE"
+  force_delete         = true
 
   image_scanning_configuration {
     scan_on_push = true
