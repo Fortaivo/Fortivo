@@ -337,9 +337,9 @@ resource "aws_ecs_task_definition" "frontend" {
       name         = "frontend"
       image        = "${aws_ecr_repository.frontend.repository_url}:latest"
       portMappings = [{ containerPort = 80, hostPort = 80 }]
-      environment = [
-        { name = "VITE_API_URL", value = "http://${aws_lb.this.dns_name}" }
-      ]
+      # Note: Vite environment variables must be set at BUILD time, not runtime
+      # They are baked into the Docker image during build
+      environment = []
       logConfiguration = {
         logDriver = "awslogs"
         options = {
