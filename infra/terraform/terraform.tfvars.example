@@ -1,0 +1,25 @@
+aws_region = "us-east-1"
+app_name   = "fortivo"
+
+# Database configuration
+db_name     = "fortivo"
+db_username = "fortivo_admin"
+db_password = "CHANGE_ME_STRONG_PASSWORD"
+db_instance_class = "db.t3.micro"
+
+# JWT Secret (generate a strong random string)
+jwt_secret = "CHANGE_ME_GENERATE_STRONG_SECRET"
+
+# CORS origin (use your domain or ALB DNS name)
+cors_origin = "*"
+
+# Resource sizing
+server_cpu    = 256
+server_memory = 512
+frontend_cpu  = 256
+frontend_memory = 512
+
+# Desired task counts
+server_desired_count   = 1
+frontend_desired_count = 1
+

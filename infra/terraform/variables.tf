@@ -16,4 +16,70 @@ variable "cors_origin" {
   default     = "*"
 }
 
+variable "db_name" {
+  type        = string
+  description = "Database name"
+  default     = "fortivo"
+}
+
+variable "db_username" {
+  type        = string
+  description = "Database username"
+  default     = "fortivo_admin"
+}
+
+variable "db_password" {
+  type        = string
+  description = "Database password"
+  sensitive   = true
+}
+
+variable "db_instance_class" {
+  type        = string
+  description = "RDS instance class"
+  default     = "db.t3.micro"
+}
+
+variable "jwt_secret" {
+  type        = string
+  description = "JWT secret key"
+  sensitive   = true
+}
+
+variable "server_cpu" {
+  type        = number
+  description = "Server container CPU units (256 = 0.25 vCPU)"
+  default     = 256
+}
+
+variable "server_memory" {
+  type        = number
+  description = "Server container memory in MB"
+  default     = 512
+}
+
+variable "frontend_cpu" {
+  type        = number
+  description = "Frontend container CPU units (256 = 0.25 vCPU)"
+  default     = 256
+}
+
+variable "frontend_memory" {
+  type        = number
+  description = "Frontend container memory in MB"
+  default     = 512
+}
+
+variable "server_desired_count" {
+  type        = number
+  description = "Desired number of server tasks"
+  default     = 1
+}
+
+variable "frontend_desired_count" {
+  type        = number
+  description = "Desired number of frontend tasks"
+  default     = 1
+}
+
 
