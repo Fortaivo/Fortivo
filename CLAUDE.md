@@ -382,23 +382,24 @@ For more details, see `DEV-WORKFLOW.md` in the root directory.
 - Real-time subscriptions available for live data updates
 
 ### AI Features
-- **Dual LLM Support**:
-  - **Ollama** (local, private): Direct frontend-to-Ollama communication via `src/lib/llm.ts`
-  - **Google Gemini** (cloud): API key-based integration
-- **Models**:
-  - Primary: qwen3 (5.2GB) - conversational AI
-  - Fallback: gemma2:2b (1.6GB) - lighter alternative
+- **AWS Bedrock Integration**:
+  - **Claude Sonnet 4.5**: Primary model via AWS Bedrock
+  - **Bedrock Agents**: Optional agent-based chat with tool calling
+  - **Backend API**: Chat endpoints in `server/src/index.ts` (`POST /api/chat`)
+  - **Session Management**: Bedrock Agents support session-based conversations
 - **Chat System**:
   - React Markdown rendering with syntax highlighting
   - Command system in `src/lib/chatCommands.ts`
   - Chat tools in `src/lib/chatTools.ts`
-  - Provider switching (Ollama ↔ Gemini)
+  - Bedrock Agents toggle in chat UI
   - Connection status indicators
-- **No Backend Required**: Chat communicates directly with Ollama at `localhost:11434`
-- **Environment Variables**:
-  - `VITE_USE_LOCAL_LLM=true` - Enable local Ollama
-  - `VITE_OLLAMA_URL=http://localhost:11434` - Ollama endpoint
-  - `VITE_GEMINI_API_KEY` - For Google Gemini (optional)
+- **Backend Integration**: Chat communicates via backend API to AWS Bedrock
+- **Environment Variables** (Backend):
+  - `AWS_REGION` - AWS region (us-east-1)
+  - `BEDROCK_MODEL_ID` - Claude Sonnet model ID
+  - `BEDROCK_AGENT_ID` - Optional Bedrock Agent ID
+  - `BEDROCK_AGENT_ALIAS_ID` - Optional Bedrock Agent Alias ID
+- **IAM Permissions**: Configured in Terraform for Bedrock access
 
 ### Payment Integration
 - Stripe integration for subscription management
@@ -494,12 +495,230 @@ npm run test:coverage # Run tests with coverage
 
 ## Deployment
 
-### Environment Setup
-Required environment variables:
+### AWS Infrastructure with Terraform
+
+The application is deployed to **AWS** using **Terraform** for Infrastructure as Code (IaC). The infrastructure includes:
+
+#### Infrastructure Components
+- **VPC**: Custom VPC with public and private subnets across 2 availability zones
+- **RDS PostgreSQL**: Managed database instance (db.t3.micro by default)
+- **ECR**: Container registries for backend and frontend Docker images
+- **ECS Fargate**: Container orchestration for backend and frontend services
+- **Application Load Balancer (ALB)**: Routes traffic to frontend and backend services
+- **Security Groups**: Network security rules for ECS, RDS, and ALB
+- **IAM Roles**: Permissions for ECS tasks (including Bedrock access)
+- **CloudWatch Logs**: Centralized logging for all services
+- **S3 + DynamoDB**: Remote Terraform state backend with state locking
+
+#### Terraform Configuration
+
+**Location**: `infra/terraform/`
+
+**Key Files**:
+- `main.tf` - Main infrastructure definitions
+- `variables.tf` - Input variables
+- `outputs.tf` - Output values (ALB URL, etc.)
+- `terraform.tfvars.example` - Example variable values
+
+**Remote Backend** (S3 + DynamoDB):
+- State stored in: `s3://fortivo-terraform-state-962795992254/terraform.tfstate`
+- State locking via DynamoDB: `fortivo-terraform-locks`
+- Region: `us-east-1`
+- Encryption: Enabled
+
+**Required Variables** (set in `terraform.tfvars` or GitHub Secrets):
+- `db_password` - Database password (sensitive)
+- `jwt_secret` - JWT secret for authentication (sensitive)
+- `bedrock_agent_id` - Optional Bedrock Agent ID
+- `bedrock_agent_alias_id` - Optional Bedrock Agent Alias ID
+
+**Terraform Commands**:
+```bash
+cd infra/terraform
+
+# Initialize (first time or after backend changes)
+terraform init
+
+# Validate configuration
+terraform validate
+
+# Plan changes (preview)
+terraform plan
+
+# Apply changes
+terraform apply
+
+# Destroy infrastructure (CAUTION: deletes everything)
+terraform destroy
 ```
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+**Important Notes**:
+- ECR repositories have `force_delete = true` to allow deletion even with images
+- Database migrations run automatically on backend container startup
+- Bedrock IAM permissions are configured for Claude Sonnet 4.5 and Bedrock Agents
+- ALB DNS name is available via `terraform output alb_url`
+
+#### AWS Bedrock Integration
+
+**Model**: Claude Sonnet 4.5 (`anthropic.claude-3-5-sonnet-20241022-v2:0`)
+
+**IAM Permissions** (configured in Terraform):
+- `bedrock:InvokeModel` - Direct model invocation
+- `bedrock:InvokeAgent` - Bedrock Agents support
+- `bedrock:CreateAgent`, `bedrock:UpdateAgent`, etc. - Agent management
+
+**Environment Variables** (set in ECS task definition):
+- `AWS_REGION` - AWS region (us-east-1)
+- `BEDROCK_MODEL_ID` - Claude Sonnet model ID
+- `BEDROCK_AGENT_ID` - Optional agent ID
+- `BEDROCK_AGENT_ALIAS_ID` - Optional agent alias ID
+
+**Creating Bedrock Agents**:
+- Agents are created via AWS Console or API (not Terraform)
+- Use scripts: `scripts/create-bedrock-agent.sh` or `scripts/create-bedrock-agent.ps1`
+- Set agent IDs in `terraform.tfvars` or leave empty to use standard Bedrock API
+
+### CI/CD with GitHub Actions
+
+**Workflow File**: `.github/workflows/ci-cd.yml`
+
+#### Pipeline Overview
+
+**On Push to `main`**:
+1. ✅ **Test** - Runs frontend and backend tests
+2. ✅ **Terraform Validate** - Validates infrastructure code
+3. ✅ **Terraform Apply** - Applies infrastructure changes automatically
+4. ✅ **Build** - Builds Docker images for frontend and backend
+5. ✅ **Push** - Pushes images to ECR
+6. ✅ **Deploy** - Updates ECS services to use new images
+7. ✅ **Wait** - Waits for services to stabilize (15 min timeout)
+8. ✅ **Output** - Displays ALB URL
+
+**On Pull Request**:
+1. ✅ **Test** - Runs tests
+2. ✅ **Terraform Validate** - Validates infrastructure
+3. ❌ **No Deployment** - PRs don't deploy (safety)
+
+#### Required GitHub Secrets
+
+Add these in: **GitHub Repository → Settings → Secrets and variables → Actions**
+
+1. **`AWS_ACCESS_KEY_ID`**
+   - Your AWS access key ID
+   - Must have permissions for: ECR, ECS, ELB, CloudWatch, IAM, RDS, S3, DynamoDB
+
+2. **`AWS_SECRET_ACCESS_KEY`**
+   - Your AWS secret access key
+
+3. **`TF_VAR_DB_PASSWORD`**
+   - Database password (from `terraform.tfvars`)
+   - Used by Terraform to set RDS password
+
+4. **`TF_VAR_JWT_SECRET`**
+   - JWT secret (from `terraform.tfvars`)
+   - Used by Terraform to set ECS environment variable
+
+#### Workflow Jobs
+
+**1. `test`**
+- Runs frontend tests (`npm test`)
+- Runs backend type checking (`npm run build`)
+- Uses Node.js 20 with npm cache
+
+**2. `terraform-validate`**
+- Initializes Terraform with remote backend
+- Validates Terraform configuration
+- Checks code formatting (`terraform fmt -check`)
+
+**3. `terraform-apply`** (main branch only)
+- Runs `terraform plan` to preview changes
+- Runs `terraform apply -auto-approve` to apply changes
+- Creates/updates AWS infrastructure automatically
+
+**4. `build-and-deploy`** (main branch only)
+- Logs into Amazon ECR
+- Builds backend Docker image (`server/Dockerfile.prod`)
+- Builds frontend Docker image (`Dockerfile.prod`) with ALB URL as `VITE_API_URL`
+- Pushes images to ECR with `:latest` and commit SHA tags
+- Forces ECS service updates to pull new images
+- Waits for services to stabilize (15 min timeout)
+- Outputs ALB URL for access
+
+#### Database Migrations
+
+**Automatic on Container Startup**:
+```bash
+npx prisma migrate deploy && node dist/index.js
 ```
+
+- ✅ Migrations run automatically on every deployment
+- ✅ No manual migration steps needed
+- ✅ Works on container restart and new deployments
+
+#### Manual Deployment (Alternative)
+
+If you need to deploy manually without GitHub Actions:
+
+```powershell
+# Login to ECR
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 962795992254.dkr.ecr.us-east-1.amazonaws.com
+
+# Build and push backend
+cd server
+docker build -f Dockerfile.prod -t 962795992254.dkr.ecr.us-east-1.amazonaws.com/fortivo-backend:latest .
+docker push 962795992254.dkr.ecr.us-east-1.amazonaws.com/fortivo-backend:latest
+
+# Build and push frontend
+cd ..
+docker build -f Dockerfile.prod -t 962795992254.dkr.ecr.us-east-1.amazonaws.com/fortivo-frontend:latest .
+docker push 962795992254.dkr.ecr.us-east-1.amazonaws.com/fortivo-frontend:latest
+
+# Force ECS update
+aws ecs update-service --cluster fortivo --service fortivo-server --force-new-deployment
+aws ecs update-service --cluster fortivo --service fortivo-frontend --force-new-deployment
+```
+
+#### Monitoring Deployments
+
+**Check Service Status**:
+```powershell
+aws ecs describe-services --cluster fortivo --services fortivo-server fortivo-frontend
+```
+
+**View Logs**:
+```powershell
+aws logs tail /ecs/fortivo-server --follow
+aws logs tail /ecs/fortivo-frontend --follow
+```
+
+**Get ALB URL**:
+```powershell
+aws elbv2 describe-load-balancers --region us-east-1 --query "LoadBalancers[?contains(LoadBalancerName, 'fortivo')].DNSName" --output text
+```
+
+#### Troubleshooting CI/CD
+
+**Services not starting?**
+- Check CloudWatch logs for errors
+- Verify Docker images exist in ECR
+- Check security groups allow traffic
+- Verify ECS task definitions are correct
+
+**GitHub Actions failing?**
+- Verify all secrets are set correctly
+- Check AWS credentials have proper permissions
+- Review workflow logs in GitHub Actions tab
+- Ensure `pnpm-lock.yaml` and `package-lock.json` are up to date
+
+**Images not updating?**
+- Ensure you're pushing to the correct ECR repository
+- Check ECS service is configured to use `:latest` tag
+- Force new deployment: `aws ecs update-service --force-new-deployment`
+
+**Terraform errors?**
+- Verify remote backend (S3 bucket and DynamoDB table) exist
+- Check AWS credentials have Terraform state access
+- Ensure variables are set correctly (via secrets or `terraform.tfvars`)
 
 ### Build Process
 ```bash
@@ -509,10 +728,12 @@ npm run type-check  # Type checking
 ```
 
 ### Production Deployment
-Deployed via Netlify with:
-- Automatic HTTPS
-- CDN distribution
-- Continuous deployment from main branch
+Deployed to **AWS ECS Fargate** via GitHub Actions with:
+- Automatic infrastructure provisioning (Terraform)
+- Automated Docker image builds and pushes
+- Zero-downtime deployments (ECS rolling updates)
+- Application Load Balancer for high availability
+- CloudWatch logging and monitoring
 - **Error monitoring** with Sentry (planned)
 - **Performance monitoring** with Web Vitals (planned)
 
@@ -561,29 +782,42 @@ Deployed via Netlify with:
 **Symptoms**: Chat button shows error or no response from AI
 
 **Solutions**:
-1. **Check Ollama model is pulled**:
+1. **Check backend API is running**:
    ```bash
-   docker compose exec ollama ollama list
-   # Should show qwen3
+   curl http://localhost:8080/api/chat/test
+   # Should return connection status
    ```
 
-2. **Pull the model if missing**:
+2. **Check AWS Bedrock permissions**:
+   - Verify IAM role has `bedrock:InvokeModel` permission
+   - Check CloudWatch logs for permission errors
+   - Ensure `AWS_REGION` environment variable is set
+
+3. **Check Bedrock model availability**:
    ```bash
-   docker compose exec ollama ollama pull qwen3
+   aws bedrock list-foundation-models --region us-east-1 --query "modelSummaries[?contains(modelId, 'claude-3-5-sonnet')]"
    ```
 
-3. **Check Ollama is running**:
+4. **Test Bedrock connection**:
    ```bash
-   docker compose logs ollama
-   curl http://localhost:11434/api/tags
+   # From backend container or local machine with AWS credentials
+   aws bedrock-runtime invoke-model \
+     --model-id anthropic.claude-3-5-sonnet-20241022-v2:0 \
+     --region us-east-1 \
+     --body '{"anthropic_version":"bedrock-2023-05-31","max_tokens":100,"messages":[{"role":"user","content":"Hello"}]}' \
+     response.json
    ```
 
-4. **Test model directly**:
+5. **Check backend logs**:
    ```bash
-   docker compose exec ollama ollama run qwen3 "Hello"
+   # Local development
+   docker compose logs -f server
+   
+   # Production (AWS)
+   aws logs tail /ecs/fortivo-server --follow
    ```
 
-5. **Hard refresh browser** (clear cache):
+6. **Hard refresh browser** (clear cache):
    - Windows: Ctrl + Shift + R
    - Mac: Cmd + Shift + R
 
