@@ -9,12 +9,12 @@ output "alb_url" {
 }
 
 output "ecr_backend_repository_url" {
-  value       = module.ecr_backend.repository_url
+  value       = aws_ecr_repository.backend.repository_url
   description = "ECR repository URL for backend"
 }
 
 output "ecr_frontend_repository_url" {
-  value       = module.ecr_frontend.repository_url
+  value       = aws_ecr_repository.frontend.repository_url
   description = "ECR repository URL for frontend"
 }
 
@@ -24,10 +24,7 @@ output "rds_endpoint" {
   sensitive   = true
 }
 
-output "s3_bucket_name" {
-  value       = aws_s3_bucket.uploads.id
-  description = "S3 bucket name for uploads"
-}
+# S3 bucket output removed - using container storage for now
 
 output "ecs_cluster_name" {
   value       = aws_ecs_cluster.this.name

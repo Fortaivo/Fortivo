@@ -3,7 +3,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = ">= 5.0"
     }
   }
 }
@@ -13,14 +13,22 @@ provider "aws" {
 }
 
 # ECR Repositories
-module "ecr_backend" {
-  source = "terraform-aws-modules/ecr/aws"
-  name   = "${var.app_name}-backend"
+resource "aws_ecr_repository" "backend" {
+  name                 = "${var.app_name}-backend"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
 }
 
-module "ecr_frontend" {
-  source = "terraform-aws-modules/ecr/aws"
-  name   = "${var.app_name}-frontend"
+resource "aws_ecr_repository" "frontend" {
+  name                 = "${var.app_name}-frontend"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
 }
 
 resource "aws_vpc" "this" {
@@ -142,10 +150,11 @@ resource "aws_lb" "this" {
 }
 
 resource "aws_lb_target_group" "server" {
-  name     = "${var.app_name}-tg-server"
-  port     = 8080
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.this.id
+  name        = "${var.app_name}-tg-server"
+  port        = 8080
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.this.id
+  target_type = "ip"
   health_check {
     path                = "/health"
     healthy_threshold   = 2
@@ -156,10 +165,11 @@ resource "aws_lb_target_group" "server" {
 }
 
 resource "aws_lb_target_group" "frontend" {
-  name     = "${var.app_name}-tg-frontend"
-  port     = 80
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.this.id
+  name        = "${var.app_name}-tg-frontend"
+  port        = 80
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.this.id
+  target_type = "ip"
   health_check {
     path                = "/"
     healthy_threshold   = 2
@@ -262,42 +272,13 @@ resource "aws_db_instance" "this" {
   vpc_security_group_ids = [aws_security_group.rds.id]
   skip_final_snapshot    = true
   publicly_accessible    = false
-  backup_retention_period = 7
+  backup_retention_period = 1
   backup_window          = "03:00-04:00"
   maintenance_window     = "mon:04:00-mon:05:00"
 }
 
-# S3 Bucket for file uploads
-resource "aws_s3_bucket" "uploads" {
-  bucket = "${var.app_name}-uploads-${data.aws_caller_identity.current.account_id}"
-}
-
-resource "aws_s3_bucket_versioning" "uploads" {
-  bucket = aws_s3_bucket.uploads.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
-resource "aws_s3_bucket_server_side_encryption_configuration" "uploads" {
-  bucket = aws_s3_bucket.uploads.id
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
-    }
-  }
-}
-
-resource "aws_s3_bucket_public_access_block" "uploads" {
-  bucket = aws_s3_bucket.uploads.id
-
-  block_public_acls       = true
-  block_public_policy      = true
-  ignore_public_acls      = true
-  restrict_public_buckets  = true
-}
-
-data "aws_caller_identity" "current" {}
+# Note: Using container storage for file uploads for now
+# S3 can be added later if persistent storage is needed
 
 # ECS Task Definitions
 resource "aws_ecs_task_definition" "server" {
@@ -307,12 +288,12 @@ resource "aws_ecs_task_definition" "server" {
   cpu                      = var.server_cpu
   memory                   = var.server_memory
   execution_role_arn       = aws_iam_role.ecs_task_execution.arn
-  task_role_arn            = aws_iam_role.ecs_task.arn
+  task_role_arn            = aws_iam_role.ecs_task_execution.arn
 
   container_definitions = jsonencode([
     {
       name  = "server"
-      image = "${module.ecr_backend.repository_url}:latest"
+      image = "${aws_ecr_repository.backend.repository_url}:latest"
       portMappings = [{ containerPort = 8080, hostPort = 8080 }]
       environment = [
         { name = "PORT", value = "8080" },
@@ -345,7 +326,7 @@ resource "aws_ecs_task_definition" "frontend" {
   container_definitions = jsonencode([
     {
       name  = "frontend"
-      image = "${module.ecr_frontend.repository_url}:latest"
+      image = "${aws_ecr_repository.frontend.repository_url}:latest"
       portMappings = [{ containerPort = 80, hostPort = 80 }]
       environment = [
         { name = "VITE_API_URL", value = "http://${aws_lb.this.dns_name}" }
@@ -402,23 +383,8 @@ resource "aws_iam_role" "ecs_task" {
   })
 }
 
-resource "aws_iam_role_policy" "ecs_task_s3" {
-  name = "${var.app_name}-ecs-task-s3"
-  role = aws_iam_role.ecs_task.id
-
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [{
-      Effect = "Allow",
-      Action = [
-        "s3:PutObject",
-        "s3:GetObject",
-        "s3:DeleteObject"
-      ],
-      Resource = "${aws_s3_bucket.uploads.arn}/*"
-    }]
-  })
-}
+# S3 IAM policy removed - using container storage for now
+# Add back if S3 is needed later
 
 resource "aws_ecs_service" "server" {
   name            = "${var.app_name}-server"

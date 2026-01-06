@@ -12,6 +12,12 @@ import path from 'path';
 import fs from 'fs/promises';
 import { fileURLToPath } from 'url';
 
+// Extend Express Request to include multer file
+interface MulterRequest extends Request {
+  file?: Express.Multer.File;
+  uploadType?: string;
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -28,13 +34,13 @@ await fs.mkdir(path.join(UPLOAD_DIR, 'documents'), { recursive: true });
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
-  destination: async (req, file, cb) => {
-    const uploadType = (req as any).uploadType || 'documents';
+  destination: async (req: MulterRequest, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
+    const uploadType = req.uploadType || 'documents';
     const dest = path.join(UPLOAD_DIR, uploadType);
     await fs.mkdir(dest, { recursive: true });
     cb(null, dest);
   },
-  filename: (req, file, cb) => {
+  filename: (req: MulterRequest, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     cb(null, uniqueSuffix + path.extname(file.originalname));
   }
@@ -43,8 +49,8 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-  fileFilter: (req, file, cb) => {
-    const uploadType = (req as any).uploadType;
+  fileFilter: (req: MulterRequest, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+    const uploadType = req.uploadType;
     if (uploadType === 'avatars') {
       // Only allow images for avatars
       if (!file.mimetype.startsWith('image/')) {
@@ -525,10 +531,10 @@ app.delete('/api/beneficiaries/:id', requireAuth, async (req: Request, res: Resp
 // File upload endpoints
 
 // Upload avatar
-app.post('/api/profile/avatar', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
-  (req as any).uploadType = 'avatars';
+app.post('/api/profile/avatar', requireAuth, async (req: MulterRequest, res: Response, next: NextFunction) => {
+  req.uploadType = 'avatars';
   next();
-}, upload.single('avatar'), async (req: Request, res: Response) => {
+}, upload.single('avatar'), async (req: MulterRequest, res: Response) => {
   try {
     const userId = (req as any).userId as string;
     if (!userId) return res.status(401).json({ error: 'unauthorized' });
@@ -603,10 +609,10 @@ app.get('/api/assets/:assetId/documents', requireAuth, async (req: Request, res:
   }
 });
 
-app.post('/api/assets/:assetId/documents', requireAuth, checkDocumentPermission, async (req: Request, res: Response, next: NextFunction) => {
-  (req as any).uploadType = 'documents';
+app.post('/api/assets/:assetId/documents', requireAuth, checkDocumentPermission, async (req: MulterRequest, res: Response, next: NextFunction) => {
+  req.uploadType = 'documents';
   next();
-}, upload.single('document'), async (req: Request, res: Response) => {
+}, upload.single('document'), async (req: MulterRequest, res: Response) => {
   try {
     const userId = (req as any).userId as string;
     if (!userId) return res.status(401).json({ error: 'unauthorized' });

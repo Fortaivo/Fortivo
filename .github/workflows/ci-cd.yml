@@ -1,0 +1,157 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  AWS_REGION: us-east-1
+  ECR_BACKEND_REPO: fortivo-backend
+  ECR_FRONTEND_REPO: fortivo-frontend
+  ECS_CLUSTER: fortivo
+  ECS_BACKEND_SERVICE: fortivo-server
+  ECS_FRONTEND_SERVICE: fortivo-frontend
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Run frontend tests
+        run: npm test -- --run
+
+      - name: Install backend dependencies
+        working-directory: ./server
+        run: npm ci
+
+      - name: Run backend type check
+        working-directory: ./server
+        run: npm run build
+
+  terraform-validate:
+    name: Validate Terraform
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.14.3
+
+      - name: Terraform Init
+        working-directory: ./infra/terraform
+        run: terraform init
+
+      - name: Terraform Validate
+        working-directory: ./infra/terraform
+        run: terraform validate
+
+      - name: Terraform Format Check
+        working-directory: ./infra/terraform
+        run: terraform fmt -check
+
+  build-and-deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+    needs: [test, terraform-validate]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Get ECR repository URLs
+        id: ecr-urls
+        run: |
+          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "backend_repo=$AWS_ACCOUNT_ID.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_BACKEND_REPO }}" >> $GITHUB_OUTPUT
+          echo "frontend_repo=$AWS_ACCOUNT_ID.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_FRONTEND_REPO }}" >> $GITHUB_OUTPUT
+
+      - name: Build, tag, and push backend image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ env.ECR_BACKEND_REPO }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -f server/Dockerfile.prod -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest ./server
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Build, tag, and push frontend image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ env.ECR_FRONTEND_REPO }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -f Dockerfile.prod -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Force ECS service update (backend)
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ env.ECS_BACKEND_SERVICE }} \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Force ECS service update (frontend)
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ env.ECS_FRONTEND_SERVICE }} \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Wait for deployment to complete
+        run: |
+          echo "Waiting for backend service to stabilize..."
+          aws ecs wait services-stable \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_BACKEND_SERVICE }} \
+            --region ${{ env.AWS_REGION }}
+          
+          echo "Waiting for frontend service to stabilize..."
+          aws ecs wait services-stable \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_FRONTEND_SERVICE }} \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Get ALB URL
+        id: alb-url
+        run: |
+          cd infra/terraform
+          terraform init -backend=false
+          ALB_URL=$(terraform output -raw alb_url 2>/dev/null || echo "")
+          echo "url=$ALB_URL" >> $GITHUB_OUTPUT
+          echo "Application deployed to: $ALB_URL"
+
