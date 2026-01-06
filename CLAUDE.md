@@ -27,13 +27,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Added**: `checkApiHealth()` function for API status monitoring
 - **Improved**: Better error messages and JSON parsing safety
 
-### ✅ **Chat System with Local LLM** - COMPLETED
-- **Added**: `src/lib/llm.ts` - LLM service with Ollama integration
+### ✅ **Chat System with AWS Bedrock** - COMPLETED
+- **Added**: `src/lib/llm.ts` - LLM service with AWS Bedrock integration
+- **Added**: `server/src/bedrock.ts` - Backend Bedrock API client
 - **Added**: `src/lib/chatTools.ts` - Chat tools functionality
-- **Integration**: Direct frontend-to-Ollama communication (no backend needed)
-- **Model**: qwen3 (5.2GB) as primary, gemma2:2b as fallback
+- **Integration**: Backend API endpoints for Bedrock chat (`POST /api/chat`)
+- **Model**: Claude Sonnet 4.5 (`anthropic.claude-3-5-sonnet-20241022-v2:0`)
+- **Features**: Bedrock Agents support, tool calling, session management
 - **Fixed**: React Markdown v9+ compatibility issues
-- **Environment**: `VITE_USE_LOCAL_LLM=true`, `VITE_OLLAMA_URL=http://localhost:11434`
+- **Environment**: `AWS_REGION`, `BEDROCK_MODEL_ID`, `BEDROCK_AGENT_ID` (optional)
 
 ### ✅ **Profile System Expansion** - COMPLETED
 - **Database**: Comprehensive demographic fields added via Prisma migration
