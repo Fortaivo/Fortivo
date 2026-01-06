@@ -770,6 +770,51 @@ app.post('/api/subscriptions', requireAuth, async (req: Request, res: Response) 
   }
 });
 
+// Bedrock Chat API endpoints
+import { generateBedrockResponse, generateBedrockAgentResponse, testBedrockConnection, ChatMessage } from './bedrock.js';
+
+app.post('/api/chat', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId as string;
+    if (!userId) return res.status(401).json({ error: 'unauthorized' });
+
+    const { messages, tools, useAgent, sessionId } = req.body;
+
+    if (!messages || !Array.isArray(messages)) {
+      return res.status(400).json({ error: 'messages_required' });
+    }
+
+    // Use Bedrock Agents if configured and requested
+    if (useAgent && sessionId) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage && lastMessage.role === 'user') {
+        const response = await generateBedrockAgentResponse(sessionId, lastMessage.content);
+        return res.json(response);
+      }
+    }
+
+    // Use regular Bedrock API
+    const response = await generateBedrockResponse(messages as ChatMessage[], tools);
+    res.json(response);
+  } catch (e) {
+    console.error('Chat error:', e);
+    res.status(500).json({ error: 'chat_error', message: e instanceof Error ? e.message : 'Unknown error' });
+  }
+});
+
+app.get('/api/chat/test', requireAuth, async (_req: Request, res: Response) => {
+  try {
+    const result = await testBedrockConnection();
+    res.json(result);
+  } catch (e) {
+    console.error('Test connection error:', e);
+    res.status(500).json({ 
+      success: false, 
+      message: e instanceof Error ? e.message : 'Connection test failed' 
+    });
+  }
+});
+
 const port = Number(process.env.PORT || 8080);
 app.listen(port, () => {
    

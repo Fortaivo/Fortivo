@@ -70,11 +70,10 @@ export function useChat() {
     connected: boolean;
     message: string;
     provider: string;
-  }>({ connected: false, message: 'Testing connection...', provider: 'unknown' });
-  const [availableModels, setAvailableModels] = useState<string[]>([]);
-  const [loadingModels, setLoadingModels] = useState(false);
+  }>({ connected: false, message: 'Testing connection...', provider: 'bedrock' });
+  const [useAgent, setUseAgent] = useState(false);
 
-  // Test LLM connection on mount and load available models
+  // Test LLM connection on mount
   useEffect(() => {
     const testConnection = async () => {
       const result = await llmService.testConnection();
@@ -82,21 +81,8 @@ export function useChat() {
       setConnectionStatus({
         connected: result.success,
         message: result.message,
-        provider: config.provider,
+        provider: config.provider || 'bedrock',
       });
-
-      // Load available Ollama models if using Ollama
-      if (config.provider === 'ollama') {
-        setLoadingModels(true);
-        try {
-          const models = await llmService.getAvailableModels();
-          setAvailableModels(models);
-        } catch (error) {
-          console.error('Error loading models:', error);
-        } finally {
-          setLoadingModels(false);
-        }
-      }
     };
     testConnection();
   }, [llmService]);
@@ -141,63 +127,35 @@ export function useChat() {
       }
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: '## I apologize for the inconvenience 🙏\n\nI\'m currently experiencing technical difficulties and cannot process your request. This might be due to:\n\n- **Connection issues** with the AI service\n- **Temporary service disruption**\n- **API limitations**\n\n**Please try again in a few moments.** If the issue persists, you can:\n\n1. Check your internet connection\n2. Switch between Local Ollama and Google Gemini providers using the ⚙️ settings\n3. Contact Fortivo support if needed\n\nThank you for your patience as I work to provide you with the best possible assistance.'
+        content: '## I apologize for the inconvenience 🙏\n\nI\'m currently experiencing technical difficulties and cannot process your request. This might be due to:\n\n- **Connection issues** with AWS Bedrock\n- **Temporary service disruption**\n- **API limitations**\n\n**Please try again in a few moments.** If the issue persists, you can:\n\n1. Check your internet connection\n2. Contact Fortivo support if needed\n\nThank you for your patience as I work to provide you with the best possible assistance.'
       }]);
     } finally {
       setLoading(false);
     }
   };
 
-  const switchToOllama = async () => {
-    llmService.switchProvider('ollama');
-    setConnectionStatus({ connected: false, message: 'Switching to Ollama...', provider: 'ollama' });
+  const toggleAgent = async () => {
+    const newUseAgent = !useAgent;
+    setUseAgent(newUseAgent);
+    llmService.setUseAgent(newUseAgent);
     
-    // Load available models
-    setLoadingModels(true);
-    try {
-      const models = await llmService.getAvailableModels();
-      setAvailableModels(models);
-    } catch (error) {
-      console.error('Error loading models:', error);
-    } finally {
-      setLoadingModels(false);
-    }
-
-    // Re-test connection
-    llmService.testConnection().then(result => {
-      setConnectionStatus({
-        connected: result.success,
-        message: result.message,
-        provider: 'ollama',
-      });
+    setConnectionStatus({ 
+      connected: false, 
+      message: newUseAgent ? 'Enabling Bedrock Agents...' : 'Disabling Bedrock Agents...', 
+      provider: 'bedrock' 
     });
-  };
-
-  const switchToGemini = () => {
-    llmService.switchProvider('gemini');
-    setAvailableModels([]); // Clear models when switching to Gemini
-    setConnectionStatus({ connected: false, message: 'Switching to Gemini...', provider: 'gemini' });
+    
     // Re-test connection
-    llmService.testConnection().then(result => {
-      setConnectionStatus({
-        connected: result.success,
-        message: result.message,
-        provider: 'gemini',
-      });
-    });
-  };
-
-  const changeModel = async (model: string) => {
-    llmService.changeModel(model);
-    setConnectionStatus({ connected: false, message: 'Switching model...', provider: llmService.getConfig().provider });
-    // Re-test connection with new model
     const result = await llmService.testConnection();
-    const config = llmService.getConfig();
     setConnectionStatus({
       connected: result.success,
       message: result.message,
-      provider: config.provider,
+      provider: 'bedrock',
     });
+  };
+
+  const resetSession = () => {
+    llmService.resetSession();
   };
 
   return {
@@ -205,11 +163,9 @@ export function useChat() {
     sendMessage,
     loading,
     connectionStatus,
-    switchToOllama,
-    switchToGemini,
-    changeModel,
-    availableModels,
-    loadingModels,
-    currentModel: llmService.getConfig().model,
+    useAgent,
+    toggleAgent,
+    resetSession,
+    currentModel: llmService.getConfig().model || 'Claude Sonnet 4.5',
   };
 }

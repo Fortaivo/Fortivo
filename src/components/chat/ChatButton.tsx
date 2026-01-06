@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MessageCircle, X, Send, Settings, Cpu, Cloud, Maximize2, Minimize2 } from 'lucide-react';
+import { MessageCircle, X, Send, Settings, Cloud, Maximize2, Minimize2, Bot, RefreshCw } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
@@ -17,15 +17,12 @@ export function ChatButton() {
     sendMessage, 
     loading, 
     connectionStatus, 
-    switchToOllama, 
-    switchToGemini,
-    changeModel,
-    availableModels,
-    loadingModels,
+    useAgent,
+    toggleAgent,
+    resetSession,
     currentModel
   } = useChat();
   const [showSettings, setShowSettings] = useState(false);
-  const [showModelDropdown, setShowModelDropdown] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +43,7 @@ export function ChatButton() {
 
       {isOpen && (
         <div className={cn(
-          "fixed bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden z-40 transition-all duration-300",
+          "fixed bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden z-40 transition-all duration-300 flex flex-col",
           isFullSize 
             ? "inset-4 w-auto h-auto" 
             : "bottom-24 right-6 w-96 max-h-[600px]"
@@ -59,9 +56,9 @@ export function ChatButton() {
                   "w-2 h-2 rounded-full",
                   connectionStatus.connected ? "bg-green-300" : "bg-red-300"
                 )} />
-                <span className="capitalize">{connectionStatus.provider}</span>
-                {connectionStatus.provider === 'ollama' && <Cpu className="h-3 w-3" />}
-                {connectionStatus.provider === 'gemini' && <Cloud className="h-3 w-3" />}
+                <span className="capitalize">AWS Bedrock</span>
+                <Cloud className="h-3 w-3" />
+                {useAgent && <Bot className="h-3 w-3" />}
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -90,84 +87,50 @@ export function ChatButton() {
 
           {showSettings && (
             <div className="p-4 border-b bg-gray-50">
-              <h4 className="text-sm font-medium text-gray-900 mb-3">LLM Provider</h4>
-              <div className="space-y-2">
-                <button
-                  onClick={() => {
-                    switchToOllama();
-                  }}
-                  className={cn(
-                    "w-full flex items-center space-x-3 p-3 rounded-lg border transition-colors text-left",
-                    connectionStatus.provider === 'ollama'
-                      ? "border-indigo-500 bg-indigo-50 text-indigo-700"
-                      : "border-gray-200 hover:border-gray-300"
-                  )}
-                >
-                  <Cpu className="h-4 w-4" />
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">Local Ollama</div>
-                    <div className="text-xs text-gray-500">Private, runs locally</div>
+              <h4 className="text-sm font-medium text-gray-900 mb-3">AWS Bedrock Settings</h4>
+              
+              <div className="space-y-3">
+                <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-medium text-indigo-900">Claude Sonnet 4.5</div>
+                      <div className="text-xs text-indigo-700 mt-1">{currentModel}</div>
+                    </div>
+                    <Cloud className="h-5 w-5 text-indigo-600" />
                   </div>
-                </button>
-                <button
-                  onClick={() => {
-                    switchToGemini();
-                  }}
-                  className={cn(
-                    "w-full flex items-center space-x-3 p-3 rounded-lg border transition-colors text-left",
-                    connectionStatus.provider === 'gemini'
-                      ? "border-indigo-500 bg-indigo-50 text-indigo-700"
-                      : "border-gray-200 hover:border-gray-300"
-                  )}
-                >
-                  <Cloud className="h-4 w-4" />
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">Google Gemini</div>
-                    <div className="text-xs text-gray-500">Cloud-based, requires API key</div>
+                </div>
+
+                <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">Bedrock Agents</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {useAgent ? 'Enabled - Advanced AI capabilities' : 'Disabled - Standard chat'}
+                    </div>
                   </div>
+                  <button
+                    onClick={toggleAgent}
+                    className={cn(
+                      "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+                      useAgent ? "bg-indigo-600" : "bg-gray-300"
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                        useAgent ? "translate-x-6" : "translate-x-1"
+                      )}
+                    />
+                  </button>
+                </div>
+
+                <button
+                  onClick={resetSession}
+                  className="w-full flex items-center justify-center space-x-2 p-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  <span>Reset Session</span>
                 </button>
               </div>
-
-              {connectionStatus.provider === 'ollama' && availableModels.length > 0 && (
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-900 mb-2">
-                    Select Model
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={currentModel || ''}
-                      onChange={(e) => {
-                        changeModel(e.target.value);
-                      }}
-                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-2 px-3 bg-white border"
-                      disabled={loadingModels || loading}
-                    >
-                      {loadingModels ? (
-                        <option>Loading models...</option>
-                      ) : (
-                        availableModels.map((model) => (
-                          <option key={model} value={model}>
-                            {model}
-                          </option>
-                        ))
-                      )}
-                    </select>
-                  </div>
-                  {currentModel && (
-                    <div className="mt-2 text-xs text-gray-500">
-                      Current: <span className="font-medium">{currentModel}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {connectionStatus.provider === 'ollama' && availableModels.length === 0 && !loadingModels && (
-                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="text-xs text-blue-800">
-                    No models available. Make sure Ollama is running and has models installed.
-                  </div>
-                </div>
-              )}
 
               {!connectionStatus.connected && (
                 <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -176,12 +139,20 @@ export function ChatButton() {
                   </div>
                 </div>
               )}
+
+              {connectionStatus.connected && (
+                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="text-xs text-green-800">
+                    <strong>Connected:</strong> {connectionStatus.message}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           <div className={cn(
-            "overflow-y-auto p-4 space-y-4",
-            isFullSize ? "flex-1" : "h-96"
+            "overflow-y-auto p-4 space-y-4 flex-1",
+            isFullSize ? "" : "h-96"
           )}>
             {messages.map((msg, index) => (
               <div
@@ -238,7 +209,7 @@ export function ChatButton() {
                     <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce delay-100" />
                     <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce delay-200" />
                   </div>
-                  <span className="text-sm text-gray-600">Fortivo AI is thinking...</span>
+                  <span className="text-sm text-gray-600">Claude is thinking...</span>
                 </div>
               </div>
             )}

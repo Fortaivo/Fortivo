@@ -297,7 +297,7 @@ resource "aws_ecs_task_definition" "server" {
   cpu                      = var.server_cpu
   memory                   = var.server_memory
   execution_role_arn       = aws_iam_role.ecs_task_execution.arn
-  task_role_arn            = aws_iam_role.ecs_task_execution.arn
+  task_role_arn            = aws_iam_role.ecs_task.arn
 
   container_definitions = jsonencode([
     {
@@ -309,7 +309,9 @@ resource "aws_ecs_task_definition" "server" {
         { name = "CORS_ORIGIN", value = var.cors_origin },
         { name = "DATABASE_URL", value = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.this.endpoint}/${var.db_name}" },
         { name = "JWT_SECRET", value = var.jwt_secret },
-        { name = "UPLOAD_DIR", value = "/app/uploads" }
+        { name = "UPLOAD_DIR", value = "/app/uploads" },
+        { name = "AWS_REGION", value = var.aws_region },
+        { name = "BEDROCK_MODEL_ID", value = "anthropic.claude-3-5-sonnet-20241022-v2:0" }
       ]
       logConfiguration = {
         logDriver = "awslogs"
@@ -330,7 +332,7 @@ resource "aws_ecs_task_definition" "frontend" {
   cpu                      = var.frontend_cpu
   memory                   = var.frontend_memory
   execution_role_arn       = aws_iam_role.ecs_task_execution.arn
-  task_role_arn            = aws_iam_role.ecs_task_execution.arn
+  task_role_arn            = aws_iam_role.ecs_task.arn
 
   container_definitions = jsonencode([
     {
@@ -389,6 +391,40 @@ resource "aws_iam_role" "ecs_task" {
       Principal = { Service = "ecs-tasks.amazonaws.com" },
       Effect    = "Allow"
     }]
+  })
+}
+
+# Bedrock IAM policy for ECS task
+resource "aws_iam_role_policy" "bedrock_access" {
+  name = "${var.app_name}-bedrock-access"
+  role = aws_iam_role.ecs_task.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "bedrock:InvokeModel",
+          "bedrock:InvokeModelWithResponseStream",
+          "bedrock:ListFoundationModels",
+          "bedrock:GetFoundationModel"
+        ],
+        Resource = [
+          "arn:aws:bedrock:${var.aws_region}::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0",
+          "arn:aws:bedrock:${var.aws_region}::foundation-model/anthropic.claude-3-5-sonnet-*"
+        ]
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "bedrock:InvokeAgent",
+          "bedrock:GetAgent",
+          "bedrock:ListAgents"
+        ],
+        Resource = "*"
+      }
+    ]
   })
 }
 

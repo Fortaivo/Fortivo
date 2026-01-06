@@ -127,11 +127,9 @@ jobs:
           ECR_REPOSITORY: ${{ env.ECR_FRONTEND_REPO }}
           IMAGE_TAG: ${{ github.sha }}
           VITE_API_URL: http://${{ steps.alb-dns.outputs.dns }}
-          VITE_USE_LOCAL_LLM: "false"
         run: |
           docker build -f Dockerfile.prod \
             --build-arg VITE_API_URL=$VITE_API_URL \
-            --build-arg VITE_USE_LOCAL_LLM=$VITE_USE_LOCAL_LLM \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG

@@ -5,15 +5,9 @@ WORKDIR /app
 
 # Build arguments for environment variables
 ARG VITE_API_URL
-ARG VITE_USE_LOCAL_LLM=false
-ARG VITE_OLLAMA_URL
-ARG VITE_GEMINI_API_KEY
 
 # Set environment variables for build
 ENV VITE_API_URL=$VITE_API_URL
-ENV VITE_USE_LOCAL_LLM=$VITE_USE_LOCAL_LLM
-ENV VITE_OLLAMA_URL=$VITE_OLLAMA_URL
-ENV VITE_GEMINI_API_KEY=$VITE_GEMINI_API_KEY
 
 # Copy package files
 COPY package.json package-lock.json* pnpm-lock.yaml* ./
