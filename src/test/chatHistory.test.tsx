@@ -109,9 +109,11 @@ describe('useChatWithHistory', () => {
 
     await result.current.createNewConversation('New Conversation');
 
+    await waitFor(() => {
+      expect(result.current.currentConversationId).toBe('2');
+    });
+
     expect(api.createConversation).toHaveBeenCalledWith('New Conversation');
-    // Conversation ID should be set after creation
-    expect(result.current.currentConversationId).toBeTruthy();
   });
 
   it('should load conversation with messages', async () => {
@@ -150,8 +152,11 @@ describe('useChatWithHistory', () => {
 
     await result.current.loadConversation('1');
 
+    await waitFor(() => {
+      expect(result.current.messages.length).toBe(2);
+    });
+
     expect(api.getConversation).toHaveBeenCalledWith('1');
-    expect(result.current.messages).toHaveLength(2);
     expect(result.current.messages[0].content).toBe('Hello');
     expect(result.current.messages[1].content).toBe('Hi there!');
   });
@@ -262,12 +267,17 @@ describe('useChatWithHistory', () => {
       expect(result.current.loadingConversations).toBe(false);
     });
 
+    // Send message and wait for it to complete
     await result.current.sendMessage('Hello');
 
-    // Should have at least the welcome message and user message
-    expect(result.current.messages.length).toBeGreaterThanOrEqual(2);
-    // Check if error was handled (either error message or welcome message shown)
+    // Wait for messages to update (user message + error message should be added)
+    await waitFor(() => {
+      expect(result.current.messages.length).toBeGreaterThanOrEqual(2);
+    }, { timeout: 3000 });
+
+    // Check if error was handled
     const lastMessage = result.current.messages[result.current.messages.length - 1];
     expect(lastMessage.content).toBeDefined();
+    expect(lastMessage.role).toBeDefined();
   });
 });
