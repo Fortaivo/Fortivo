@@ -109,4 +109,57 @@ export async function checkApiHealth(): Promise<boolean> {
   }
 }
 
+// Chat Conversation API functions
+
+export interface ChatConversation {
+  id: string;
+  userId: string;
+  title: string | null;
+  createdAt: string;
+  updatedAt: string;
+  messages?: ChatMessage[];
+}
+
+export interface ChatMessage {
+  id: string;
+  conversationId: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  toolCalls?: unknown;
+  createdAt: string;
+}
+
+export async function getConversations(): Promise<ChatConversation[]> {
+  return apiGet<ChatConversation[]>('/api/conversations');
+}
+
+export async function createConversation(title?: string): Promise<ChatConversation> {
+  return apiPost<ChatConversation>('/api/conversations', { title });
+}
+
+export async function getConversation(id: string): Promise<ChatConversation> {
+  return apiGet<ChatConversation>(`/api/conversations/${id}`);
+}
+
+export async function updateConversation(id: string, title: string): Promise<ChatConversation> {
+  return apiPatch<ChatConversation>(`/api/conversations/${id}`, { title });
+}
+
+export async function deleteConversation(id: string): Promise<void> {
+  return apiDelete(`/api/conversations/${id}`);
+}
+
+export async function addMessage(
+  conversationId: string,
+  role: 'user' | 'assistant' | 'system',
+  content: string,
+  toolCalls?: unknown
+): Promise<ChatMessage> {
+  return apiPost<ChatMessage>(`/api/conversations/${conversationId}/messages`, {
+    role,
+    content,
+    toolCalls,
+  });
+}
+
 

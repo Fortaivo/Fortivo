@@ -808,10 +808,181 @@ app.get('/api/chat/test', requireAuth, async (_req: Request, res: Response) => {
     res.json(result);
   } catch (e) {
     console.error('Test connection error:', e);
-    res.status(500).json({ 
-      success: false, 
-      message: e instanceof Error ? e.message : 'Connection test failed' 
+    res.status(500).json({
+      success: false,
+      message: e instanceof Error ? e.message : 'Connection test failed'
     });
+  }
+});
+
+// Chat History API endpoints
+
+// GET /api/conversations - List user's conversations
+app.get('/api/conversations', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId as string;
+    const conversations = await prisma.chatConversation.findMany({
+      where: { userId },
+      include: {
+        messages: {
+          orderBy: { createdAt: 'asc' },
+          take: 1, // Only get first message for preview
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    res.json(conversations);
+  } catch (e) {
+    console.error('Get conversations error:', e);
+    res.status(500).json({ error: 'server_error', message: e instanceof Error ? e.message : 'Unknown error' });
+  }
+});
+
+// POST /api/conversations - Create new conversation
+app.post('/api/conversations', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId as string;
+    const { title } = req.body;
+
+    const conversation = await prisma.chatConversation.create({
+      data: {
+        userId,
+        title: title || 'New Conversation',
+      },
+      include: {
+        messages: true,
+      },
+    });
+
+    res.status(201).json(conversation);
+  } catch (e) {
+    console.error('Create conversation error:', e);
+    res.status(500).json({ error: 'server_error', message: e instanceof Error ? e.message : 'Unknown error' });
+  }
+});
+
+// GET /api/conversations/:id - Get conversation with all messages
+app.get('/api/conversations/:id', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId as string;
+    const { id } = req.params;
+
+    const conversation = await prisma.chatConversation.findFirst({
+      where: { id, userId },
+      include: {
+        messages: {
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+    });
+
+    if (!conversation) {
+      return res.status(404).json({ error: 'conversation_not_found' });
+    }
+
+    res.json(conversation);
+  } catch (e) {
+    console.error('Get conversation error:', e);
+    res.status(500).json({ error: 'server_error', message: e instanceof Error ? e.message : 'Unknown error' });
+  }
+});
+
+// PATCH /api/conversations/:id - Update conversation title
+app.patch('/api/conversations/:id', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId as string;
+    const { id } = req.params;
+    const { title } = req.body;
+
+    // Verify ownership
+    const existing = await prisma.chatConversation.findFirst({
+      where: { id, userId },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: 'conversation_not_found' });
+    }
+
+    const conversation = await prisma.chatConversation.update({
+      where: { id },
+      data: { title },
+    });
+
+    res.json(conversation);
+  } catch (e) {
+    console.error('Update conversation error:', e);
+    res.status(500).json({ error: 'server_error', message: e instanceof Error ? e.message : 'Unknown error' });
+  }
+});
+
+// DELETE /api/conversations/:id - Delete conversation
+app.delete('/api/conversations/:id', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId as string;
+    const { id } = req.params;
+
+    // Verify ownership
+    const existing = await prisma.chatConversation.findFirst({
+      where: { id, userId },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: 'conversation_not_found' });
+    }
+
+    // Delete conversation (messages will cascade delete)
+    await prisma.chatConversation.delete({
+      where: { id },
+    });
+
+    res.status(204).send();
+  } catch (e) {
+    console.error('Delete conversation error:', e);
+    res.status(500).json({ error: 'server_error', message: e instanceof Error ? e.message : 'Unknown error' });
+  }
+});
+
+// POST /api/conversations/:id/messages - Add message to conversation
+app.post('/api/conversations/:id/messages', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId as string;
+    const { id } = req.params;
+    const { role, content, toolCalls } = req.body;
+
+    if (!role || !content) {
+      return res.status(400).json({ error: 'role_and_content_required' });
+    }
+
+    // Verify ownership
+    const conversation = await prisma.chatConversation.findFirst({
+      where: { id, userId },
+    });
+
+    if (!conversation) {
+      return res.status(404).json({ error: 'conversation_not_found' });
+    }
+
+    // Create message
+    const message = await prisma.chatMessage.create({
+      data: {
+        conversationId: id,
+        role,
+        content,
+        toolCalls: toolCalls || null,
+      },
+    });
+
+    // Update conversation's updatedAt
+    await prisma.chatConversation.update({
+      where: { id },
+      data: { updatedAt: new Date() },
+    });
+
+    res.status(201).json(message);
+  } catch (e) {
+    console.error('Create message error:', e);
+    res.status(500).json({ error: 'server_error', message: e instanceof Error ? e.message : 'Unknown error' });
   }
 });
 

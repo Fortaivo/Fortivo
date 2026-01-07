@@ -17,6 +17,7 @@ model User {
   assets    Asset[]
   beneficiaries Beneficiary[]
   subscriptions Subscription[]
+  chatConversations ChatConversation[]
 }
 
 model Profile {
@@ -133,5 +134,33 @@ enum SubscriptionStatus {
   active
   canceled
   past_due
+}
+
+model ChatConversation {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String?
+  messages  ChatMessage[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ChatMessage {
+  id             String   @id @default(uuid())
+  conversationId String
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           MessageRole
+  content        String
+  toolCalls      Json?
+  createdAt      DateTime @default(now())
+
+  @@index([conversationId])
+}
+
+enum MessageRole {
+  user
+  assistant
+  system
 }
 

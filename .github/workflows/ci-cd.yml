@@ -40,6 +40,12 @@ jobs:
         working-directory: ./server
         run: npm ci
 
+      - name: Run backend tests
+        working-directory: ./server
+        run: npm test
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+
       - name: Run backend type check
         working-directory: ./server
         run: npm run build
